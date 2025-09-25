@@ -1,10 +1,10 @@
-.. _release-1.0:
+.. _release-2.0:
 
 Release Notes
 =============
 .. raw:: html
 
-   <marquee><B>Moil Meeting Desktop Application v1.0</B></marquee>
+   <marquee><B>Moil Meeting Desktop Application v2.0</B></marquee>
 
 .. contents::
    :local:
@@ -24,22 +24,28 @@ Highlights
 
 New Features
 ------------
-.. rubric:: What’s new in 1.0
+.. rubric:: What’s new in 2.0
 
-- **Instant Meeting** — Start a meeting with just one click, no complicated setup required.
-- **Screen Sharing** — Share your entire screen or a specific application window.
-- **Meeting Recording** — Record your meetings for replay or documentation.
+- **Video List** — Browse and manage the list of available videos in one organized view.
+- **Right-Click Menu → Show Original Window** — Right-click on a video to open the original source window.
+- **Dialog Open Source with Token** — Access open source content through a dedicated dialog with token-based authentication.
+- **Camera Orientation Modes** — Three camera orientation modes: Upside, Front, and Downside for flexible viewing.
+- **UI Scaling** — Adjust the user interface scale for better visual comfort across different screen sizes.
+- **Video Playback** — Play videos directly within the application without the need for external tools.
+
 
 Improvements
 ------------
-- **Connection stability**: Optimized to reduce latency and maintain video quality on slower networks.
+- **Adjust Page Size Clearly**: OOptimized page layout for better readability across various screen resolutions.
 - **Consistent UI**: Unified design with clearer icons, colors, and navigation.
-- **Enhanced security**: End-to-end encryption to keep your meetings private and secure.
-- **Smart notifications**: Get meeting reminders and chat alerts without interruptions.
+- **Improved Color Contrast**: Updated color scheme and contrast for improved accessibility and readability, especially in light and dark modes.
+ 
 
 Bug Fixes
 ---------
-None (Initial Release)
+1. Cache Feature.
+2. AI Tracking.
+3. Camera Information.
 
 Upgrade Notes
 -------------
@@ -48,7 +54,7 @@ None
 Getting Started
 ---------------
 
-1. Download and install **Moil Meeting v1.0** for your operating system.
+1. Download and install **Moil Meeting v2.0** for your operating system.
 2. Log in with your Moil account.
 3. Explore the new features through **Help → What’s New**.
 
@@ -58,4 +64,4 @@ Getting Started
 
 Changelog
 ---------
-- **1.0 (2025-08-19)** — Initial GA release with core meeting features, screen sharing, recording, chat, and performance optimizations.
+- **2.0 (2025-08-19)** — Initial GA release with core meeting features, screen sharing, recording, chat, and performance optimizations.

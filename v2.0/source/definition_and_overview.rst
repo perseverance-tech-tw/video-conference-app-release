@@ -92,6 +92,7 @@ Patrol Mode provides a panoramic view that allows users to view the video thorou
    :align: center
 
    *Patrol Mode*
+   
 With the combination of panoramic video and supporting images, Patrol Mode helps improve the effectiveness of communication and collaboration in meetings or surveillance.
 
 Presentation Mode
@@ -114,9 +115,11 @@ The AI Tracking feature is available in all modes and works to automatically det
    :alt: Presentation Mode
    :width: 30%
    :align: center
+
 The AI Tracking feature can also be turned OFF at any time according to user needs, providing flexibility in presentation or discussion settings.
 
 .. tip::
+
 
    For best results, combine AI Tracking with the mode that matches your meeting style:
    e.g., *Discussion Mode* for multi-participant panels or *Presentation Mode* for lectures.
