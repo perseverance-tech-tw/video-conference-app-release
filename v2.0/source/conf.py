@@ -25,3 +25,5 @@ exclude_patterns = []
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+# pakai logo SVG di sidebar (atas)
+html_logo = "_static/moil_meeting_app.png"

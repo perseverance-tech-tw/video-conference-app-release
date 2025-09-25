@@ -1,8 +1,7 @@
 Moil Meeting Of Usage
 =====================
 
-Moil Meeting of Usage
----------------------
+
 .. figure:: _static/operation.png
    :alt: operation
    :width: 100%
@@ -15,14 +14,14 @@ Moil Meeting is a software application that users can utilize, and the referred 
 
 
 Operations of the Moil Meeting
-------------------------------
+==============================
 
 Overview of Apps
 ~~~~~~~~~~~~~~~~
 
 **Fisheye Video Conference System** is a video conferencing application designed with a simple and modern interface.
 When the application is launched, the user is immediately taken to the main interface so that access to the main features becomes faster.
-
+ 
 In the main view of the application, there are several working modes that users can select at the bottom of the screen:
 
 - **Start Camera**: Enables the camera to begin video capture for all modes.
@@ -101,7 +100,7 @@ Once initialization is successful, you will be directed to the **Original Mode**
 Start Camera and Stop Camera
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: _static/start_and_select.png
+.. figure:: _static/select_media_source_v2.png
    :alt: start_and_select.png
    :width: 100%
    :align: center
@@ -113,6 +112,7 @@ Start Camera and Stop Camera
 - **Open Camera**: Use connected camera devices.
 - **Load Media**: Upload a video file from local storage.
 - **Camera URL**: Enter a network/IP camera URL.
+- **Token**: access camera parameters, a valid token is required. Ensure you are using a token with the appropriate access level (All Data or Limited Data).
 
 After selecting your source, click **OK** to confirm or **Cancel** to exit.
 
@@ -165,9 +165,9 @@ For users, Original Mode enhances situational awareness and supports more inclus
 
 
 Discussion Mode
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
-.. figure:: _static/disscusion.png
+.. figure:: _static/disscusion_newversion.png
    :alt: disscusion
    :width: 100%
    :align: center
@@ -177,9 +177,9 @@ Discussion Mode
 Allows flexible multi-camera management.
 Features:
 
-- **Config Button**: Access advanced settings (Camera Info, Reset, Panorama, Resolution, Original View).
+- **Config Button**: Access advanced settings through the **Config Button**, which includes various camera and interface options such as **Camera Info**, **Reset**, **Panorama**, **Resolution**, **Original View**, **Increase & Scale UI**, and the ability to **Record Videos**. Additional features include **Camera Orientation** settings (*upside*, *front*, *downside*), a **Cache Feature** for **export**, **import**, and **reset**, as well as a **Viewlist** for managing and navigating multiple camera views or presets.
 
-.. figure:: _static/config.png
+.. figure:: _static/config_v2.png
    :alt: config
    :width: 80%
    :align: center
@@ -204,7 +204,7 @@ If the user selects Limit Person: 6, the system will generate 6 views to match t
 
 - **Right-click menu**: In Discussion View Mode, right-clicking on any individual view will display a contextual menu with multiple options. Each of these options serves a specific purpose and is designed to support advanced view-level operations. 
 
-.. figure:: _static/clicked.png
+.. figure:: _static/right_clicked_v2.png
    :alt: Right-clicked  view
    :width: 40%
    :align: center
@@ -243,6 +243,15 @@ If you want to disable the panorama view, click the "Hide Panorama" button. This
 
    Slider
 
+- **Video Playback**: The Video Playback feature offers four main functions: **Reverse Video**, **Reset Video**, **Forward Video**, and **Toggle Fullscreen**. Users can enter fullscreen mode by pressing **F11**, and exit it by pressing **Esc**. Additionally, a slider is provided to allow quick navigation through the video, making it easy to rewind or fast-forward to specific sections as needed.
+
+.. figure:: _static/video_playback.png
+   :alt: slider
+   :width: 60%
+   :align: center
+
+   Video Playback
+
 Global Mode
 ~~~~~~~~~~~
 
@@ -264,7 +273,7 @@ Includes config features: Camera Info, Flip, Panorama, Resolution, Reset, Origin
 Patrol Mode
 ~~~~~~~~~~~
 
-.. figure:: _static/patrol.png
+.. figure:: _static/patrol_mode_v2.png
    :alt: patrol
    :width: 100%
    :align: center
@@ -279,7 +288,7 @@ Patrol Mode
 Presentation Mode
 ~~~~~~~~~~~~~~~~~
 
-.. figure:: _static/presentation.png
+.. figure:: _static/presentation_mode_v2.png
    :alt: presentation
    :width: 100%
    :align: center
@@ -295,9 +304,9 @@ Configuration Panel
 ~~~~~~~~~~~~~~~~~~~
 Accessed by **Config Button**:
 
-- **Camera Information**: Model, parameters, FOV, resolution, open time, user, version.
+- **Camera Information**: Model, parameters, FOV, resolution, open time, user, version. If a newer version of the system is available, a Download New Version button will appear automatically.
 
-.. figure:: _static/information.png
+.. figure:: _static/camera_information_v2.png
    :alt: information
    :width: 80%
    :align: center
@@ -306,14 +315,14 @@ Accessed by **Config Button**:
 
 - **View Number Show/Hide**: The 'View Number' feature is designed to display labels for each camera view. This feature allows users to show or hide labels across all views.
 
-.. figure:: _static/view_number.png
+.. figure:: _static/view_number_v2.png
    :alt: view_number
    :width: 80%
    :align: center
 
    Show View Number
 
-.. figure:: _static/hide_view_number.png
+.. figure:: _static/hide_view_number_v2.png
    :alt: hide view_number
    :width: 80%
    :align: center
@@ -365,67 +374,107 @@ Accessed by **Config Button**:
    
    **5. Flip Horizontal**
       This feature **flips the view from left to right**. It is helpful if the image appears mirrored or needs to be corrected.
+
    **6. Reset Flip**
       This button resets any flip settings applied and restores the view to its default (original) orientation.
       
-      **a). Resolution Config**
-         The 'Resolution Config' feature is used to adjust the resolution for each view in the application. Several resolution options are available, which can be customized to meet the user's needs.
+
+- **Resolution Config**
+   The 'Resolution Config' feature is used to adjust the resolution for each view in the application. Several resolution options are available, which can be customized to meet the user's needs.
        
-         .. figure:: _static/resolution.png
-            :alt: resolution
-            :width: 80%
-            :align: center
+.. figure:: _static/resolution_v2.png
+   :alt: resolution
+   :width: 80%
+   :align: center
 
-            Resolution Configuration
+   Resolution Configuration     
+   
+-  **Original View Window**
+   The 'Original View Window' feature allows the application to open a new window dedicated to displaying the original video, enabling users to view the original video in a separate window while making configurations in the application.
 
+   .. figure:: _static/original_image_window.png
+      :alt: original_mode_window
+      :width: 80%
+      :align: center
 
-      **b).Reset All Settings**
-         The 'Reset All Settings' feature restores all configurations made by the user to the application's default settings.
-       
-         .. figure:: _static/reset_seting.png
-            :alt: reset_setting
-            :width: 60%
-            :align: center
+      Original Image Window
 
-            Reset All Settings
+-  **Scale UI**
+   In the user interface (UI) scale settings, there are two available options: Increase Scale UI and Decrease Scale UI. The Increase Scale UI option is used to enlarge the system display size or increase the UI scale, making the elements on the screen appear larger. Conversely, if the user wants to reduce the display size, they can use the Decrease Scale UI option to lower the UI scale as needed.
+   
+         **1. Increase Scale UI**
 
-
-      **c). Original View Window**
-         The 'Original View Window' feature allows the application to open a new window dedicated to displaying the original video, enabling users to view the original video in a separate window while making configurations in the application.
-
-         .. figure:: _static/original_image_window.png
+         .. figure:: _static/increase_v2.png
             :alt: original_mode_window
             :width: 80%
             :align: center
 
-            Original Image Window
+            Increase Scale UI
+
+         **2. Decrease Scale UI**
+
+         .. figure:: _static/increase_v2.png
+            :alt: increase_scale_ui
+            :width: 80%
+            :align: center
+
+            Increase Scale UI
+            
+-  **Record Video**
+   Record Video is used to view the list of recorded videos that have been created. Through this feature, users can access and replay previously saved videos. The record video list also includes Refresh and Sort by Newest First options, allowing users to update the list and easily view the most recent recordings at the top.
+   
+   .. figure:: _static/Record_Video.png
+      :alt: Record_video
+      :width: 80%
+      :align: center
+
+      Record Video List
+
+-  **Camera Orientation**
+   Camera Orientation includes three options: Upside, Front, and Downside. These options allow users to adjust the camera's viewing direction based on their needs or the physical placement of the camera.
+   
+   .. figure:: _static/camera_orientation.png
+      :alt: camera_orientation
+      :width: 40%
+      :align: center
+
+      Camera Orientation
+
+-  **Cache Feature**
+   The Cache feature includes three functions: Reset, and Import & Export. These functions help manage cached data to improve performance, restore default settings, and transfer cache files as needed.
+   
+   .. figure:: _static/cache_feature.png
+      :alt: cache feature
+      :width: 40%
+      :align: center
+
+      Cache Feature
 
 
-
-Mouse Press Events
-~~~~~~~~~~~~~~~~~~
+Right-Clicked Features
+----------------------
 The Mouse Press Event is a versatile feature available across all modes of the system, including Original Mode, Discussion Mode, Global Mode, Patrol Mode, and Presentation Mode. This feature enhances user interaction by responding to various mouse actions, making navigation and control much easier and more intuitive. The Mouse Press Event supports multiple types of mouse inputs such as right-click, scroll up, scroll down, double click, and drag and drop. Mouse Press Event is an essential interactive feature that works consistently across all modes, providing users with flexible and efficient.          
 Available in all modes:
 
-.. figure:: _static/clicked.png
+.. figure:: _static/right_clicked_v2.png
             :alt: Right-clicked
             :width: 40%
             :align: center
 
             Right clicked
 
-- **View Information**: The 'View Information' feature allows users to view details about the selected view, as shown in the image below.
+- **View Information**: Model, parameters, FOV, resolution, open time, user, version. If a newer version of the system is available, a Download New Version button will appear automatically.
 
-.. figure:: _static/information.png
+.. figure:: _static/camera_information_v2.png
             :alt: Information
             :width: 80%
             :align: center
 
-            Camera information
+            View information
 
 - **Save Image As**: The 'Save Image As' feature allows users to save the image from the selected view, with the option to choose the desired storage location.
 
-.. figure:: _static/save_image.png
+.. figure:: _static/save_image_v2.png
             :alt: save_image
             :width: 80%
             :align: center
@@ -438,21 +487,31 @@ Available in all modes:
             :alt: show original
             :width: 100%
             :align: center
+            
+            Show and Hide Original Image     
 
-            Show and Hide Original Image
+- **Show Original View Window**: The Show Original View Window feature displays the original image of the selected view in a separate window, allowing users to compare it with the current view and easily return to their previous configuration.
+
+.. figure:: _static/original_v2.png
+            :alt: show window
+            :width: 100%
+            :align: center
+
+            Show Original View Window
+
 
 - **Pause View**: The 'Pause View' feature stops the selected video and allows it to be resumed.
 
-.. figure:: _static/pause_and_resume.png
+.. figure:: _static/pause_resume_v2.png
             :alt: pause_and_resume
-            :width: 100%
+            :width: 80%
             :align: center
 
             Pause and Resume View
 
 - **Configuration View Setting**: The Configuration View Setting menu is used to adjust the camera view that has been transformed from the Original View (fisheye lens view) into a more readable Anypoint View. This menu provides several essential features:
 
-   .. figure:: _static/configuration.png
+   .. figure:: _static/configuration_v2.png
                :alt: configuration
                :width: 100%
                :align: center
@@ -488,6 +547,7 @@ Available in all modes:
    
    **5. Flip Horizontal**
       This feature **flips the view from left to right**. It is helpful if the image appears mirrored or needs to be corrected.
+
    **6. Reset Flip**
       This button resets any flip settings applied and restores the view to its default (original) orientation.
       
@@ -510,7 +570,7 @@ Available in all modes:
    **10. Adjusted Transform**
          This feature is designed to help you focus more easily on a specific object by allowing customized transformation adjustments as needed. When you activate the transform, the original appearance of the object (before any transformation) will appear in the corner as a reference, allowing you to compare the changes with the original version. If you wish to revert back to the initial state, simply press the Reset button to discard all adjustments and restore the object to its original form.
          
-            .. figure:: _static/adjust_transform.png
+            .. figure:: _static/adjust_transform_v2.png
                      :alt: adjust_transform
                      :width: 80%
                      :align: center
@@ -522,9 +582,8 @@ Available in all modes:
    Mouse Press Event enhances navigation and control across all modes.
 
 
-Right-Clicked Features
-~~~~~~~~~~~~~~~~~~~~~~
-
+Mouse Press Events
+------------------
 - **Mouse Drag**: The feature allows users to drag the mouse to select a desired region easily and switch between maps seamlessly, enhancing navigation and interaction within the application.
 
 .. figure:: _static/mouse_drag.png
