@@ -19,10 +19,13 @@ First, download [OBS Studio](https://obsproject.com/download) Once downloaded, p
 
 ### [OS Linux](#outline)
 -  First, Need to disable Secure Boot in BIOS. <br>
--  Second, Install v4l2loopback with this command in terminal .
+-  Second, Install **v4l2loopback** & **mpv** with this command in terminal .
 
 ```
 sudo apt install v4l2loopback-dkms v4l2loopback-utils
+```
+```
+sudo apt install mpv
 ```
 
 
