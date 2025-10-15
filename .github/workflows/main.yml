@@ -202,12 +202,21 @@ jobs:
       - name: Copy install.sh and uninstall.sh into dist/linux folder
         shell: bash
         run: |
-          # Pastikan folder hasil PyInstaller sesuai dengan nama app Anda
+          set -euo pipefail
           appdir="dist/linux/FisheyeVideoConferenceSystem"
           if [ ! -d "$appdir" ]; then
-            # fallback: ambil folder pertama di dist/linux
-            appdir=$(find dist/linux -maxdepth 1 -type d -not -path 'dist/linux' | head -n1)
+            echo "Explicit appdir not found, searching…"
+            # Try to find a PyInstaller app dir that contains an executable
+            appdir=$(find dist/linux -maxdepth 1 -type d -not -path 'dist/linux' | head -n1 || true)
           fi
+          if [ -z "${appdir:-}" ] || [ ! -d "$appdir" ]; then
+            echo "ERROR: Could not find app output folder under dist/linux"
+            ls -la dist/linux || true
+            exit 1
+          fi
+          echo "App directory detected: $appdir"
+          ls -la "$appdir"
+
           cp dist/install.sh "$appdir"/
           cp dist/uninstall.sh "$appdir"/
           chmod +x "$appdir"/install.sh "$appdir"/uninstall.sh
@@ -218,13 +227,23 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
         working-directory: video-conference-using-fisheye
         
-      - name: Compress to .7z using LZMA
+      - name: Compress to .7z (LZMA2) and self-test
         shell: bash
         run: |
+          set -euo pipefail
           cd dist/linux
-          # cari folder app yang berisi binary hasil PyInstaller
+
           appdir=$(find . -maxdepth 1 -type d -not -path '.' | head -n1)
-          7z a -t7z -m0=lzma -mx=9 -ms=on ../FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z "$appdir"
+          echo "Zipping folder: $appdir"
+          out="../FisheyeVideoConferenceSystem-${TAG_NAME}-linux.7z"
+          # Use LZMA2 (default), maximum compression, solid blocks
+          7z a -t7z -m0=lzma2 -mx=9 -ms=on "$out" "$appdir"
+
+          echo "Archive created:"
+          ls -lh "$out"
+
+          echo "Testing archive integrity…"
+          7z t "$out"
         working-directory: video-conference-using-fisheye
         
       - name: Get previous tag (robust)
@@ -243,7 +262,8 @@ jobs:
       - name: Upload Linux Artifact to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z
+          files: |
+            video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z
           tag_name: ${{ env.TAG_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
