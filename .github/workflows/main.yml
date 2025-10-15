@@ -246,7 +246,5 @@ jobs:
         with:
           files: video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z
           tag_name: ${{ env.TAG_NAME }}
-          body: |
-            Fisheye Video Conference System ${{ env.TAG_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
