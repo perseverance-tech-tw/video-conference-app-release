@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --prune
-          latest_tag=$(git tag --sort=-v:refname | grep '^v1\.1\.' | head -n 1 || true)
+          latest_tag=$(git tag --sort=-v:refname | grep '^v1\.2\.' | head -n 1 || true)
           if [ -z "$latest_tag" ]; then
             next_tag="v1.2.0"
           else
