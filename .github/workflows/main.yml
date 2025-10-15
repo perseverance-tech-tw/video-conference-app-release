@@ -18,17 +18,14 @@ jobs:
           fetch-tags: true
           
       - name: Checkout Private Repository
-        run: |
-          # Clone the private repository
-          git clone --branch release https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
-          
-          # Change to the directory of the cloned repository
-          cd video-conference-using-fisheye
-          
-          # Optionally, verify that the repository is cloned
-          echo "Listing contents of the cloned repository:"
-          Get-ChildItem -Force -Recurse
         shell: pwsh
+        run: |
+          git clone --single-branch --depth 1 --branch release https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
+          cd video-conference-using-fisheye
+          git fetch origin release --depth 1
+          git reset --hard origin/release    # pastikan benar-benar di HEAD terbaru
+          Write-Host "Listing contents of the cloned repository:"
+          Get-ChildItem -Force -Recurse
           
       - name: Set up Python 3.9.13
         uses: actions/setup-python@v4
