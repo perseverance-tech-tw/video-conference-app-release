@@ -48,7 +48,6 @@ jobs:
           fi
           echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
           echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
-        working-directory: video-conference-using-fisheye
         
       - name: Update version.txt
         shell: bash
