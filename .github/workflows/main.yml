@@ -43,11 +43,11 @@ jobs:
           git fetch --tags --prune
           latest_tag=$(git tag --sort=-v:refname | grep '^v1\.1\.' | head -n 1 || true)
           if [ -z "$latest_tag" ]; then
-            next_tag="v1.1.0"
+            next_tag="v1.2.0"
           else
-            patch=${latest_tag##v1.1.}
+            patch=${latest_tag##v1.2.}
             next_patch=$((patch + 1))
-            next_tag="v1.1.$next_patch"
+            next_tag="v1.2.$next_patch"
           fi
           echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
           echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
