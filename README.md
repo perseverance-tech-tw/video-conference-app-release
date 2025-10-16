@@ -58,7 +58,7 @@ Or you can Uninstal by open Apps>Installed apps on your device for unistall the 
 
 ### [Download and Instal Moil Meeting (OS Linux)](#outline)
 ### [1. Install and Uninstall Program](#outline)
-First,you can access GitHub at https://github.com/perseverance-tech-tw/video-conference-using-fisheye to get the necessary files. On the page, go to the lates releases section and download the file named with .7z extention. After downloading, extract the FisheyeVideoConference file. You can extract by double click the package. <br>
+First,you can access GitHub at https://github.com/perseverance-tech-tw/video-conference-app-release/releases to get the necessary files. On the page, go to the lates releases section and download the file named with .7z extention. After downloading, extract the FisheyeVideoConference file. You can extract by double click the package. <br>
 ![WhatsApp Image 2025-07-28 at 11 33 41_e0da19b3](https://github.com/user-attachments/assets/91f39893-694c-4884-a95a-443f853f287c)
 
 Once extracted, open the folder and continue opening subfolders until you find the install.sh and uninstall.sh files<br>
