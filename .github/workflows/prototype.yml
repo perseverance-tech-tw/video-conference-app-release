@@ -22,8 +22,8 @@ jobs:
         run: |
           git clone --single-branch --depth 1 --branch prototype-version https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
           cd video-conference-using-fisheye
-          git fetch origin release --depth 1
-          git reset --hard origin/release    # pastikan benar-benar di HEAD terbaru
+          git fetch origin prototype-version --depth 1
+          git reset --hard origin/prototype-version    # pastikan benar-benar di HEAD terbaru
           Write-Host "Listing contents of the cloned repository:"
           Get-ChildItem -Force -Recurse
           
