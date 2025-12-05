@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --prune
-          next_tag="Prototype-Version"
+          next_tag="Prototype.1.1"
           echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
           echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
         
