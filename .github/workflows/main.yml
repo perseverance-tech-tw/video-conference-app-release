@@ -38,13 +38,13 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --prune
-          latest_tag=$(git tag --sort=-v:refname | grep '^v1\.2\.' | head -n 1 || true)
+          latest_tag=$(git tag --sort=-v:refname | grep '^v2\.0\.' | head -n 1 || true)
           if [ -z "$latest_tag" ]; then
-            next_tag="v1.2.0"
+            next_tag="v2.0.0"
           else
-            patch=${latest_tag##v1.2.}
+            patch=${latest_tag##v2.0.}
             next_patch=$((patch + 1))
-            next_tag="v1.2.$next_patch"
+            next_tag="v2.0.$next_patch"
           fi
           echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
           echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
