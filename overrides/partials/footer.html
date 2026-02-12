@@ -1,0 +1,40 @@
+<!--
+  Custom footer with Moil Meeting branding
+-->
+<footer class="md-footer">
+    <!-- Custom footer content with logo and title -->
+    <div class="md-footer-meta md-typeset">
+        <div class="md-footer-meta__inner md-grid">
+            <!-- Custom branding section -->
+            <div class="md-footer-branding">
+                <a href="{{ nav.homepage.url | url }}" class="md-footer-branding__link">
+                    <img src="{{ 'assets/images/ui/moil_meeting_app.png' | url }}" alt="Moil Meeting"
+                        class="md-footer-branding__logo">
+                    <span class="md-footer-branding__title">Moil Meeting</span>
+                </a>
+            </div>
+
+            <!-- Copyright and links -->
+            <div class="md-footer-copyright">
+                <div class="md-footer-copyright__highlight">
+                    {% if config.copyright %}
+                    {{ config.copyright }}
+                    {% else %}
+                    &copy; 2026 Moil Meeting. All rights reserved.
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Social links (optional) -->
+            {% if config.extra.social %}
+            <div class="md-footer-social">
+                {% for social in config.extra.social %}
+                <a href="{{ social.link }}" target="_blank" rel="noopener" class="md-footer-social__link">
+                    {% include ".icons/" ~ social.icon ~ ".svg" %}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</footer>
