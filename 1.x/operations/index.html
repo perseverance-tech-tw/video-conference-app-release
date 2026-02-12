@@ -1,0 +1,1261 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://belajarsiko-bit.github.io/moil-meeting-docs/latest/Version 1.x/operations/">
+      
+      
+        <link rel="prev" href="../usage/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Operations of the Moil Meeting - Moil Meeting Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Space+Grotesk:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Space Grotesk";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#operations-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Moil Meeting Docs" class="md-header__button md-logo" aria-label="Moil Meeting Docs" data-md-component="logo">
+      
+  <img src="../assets/images/ui/moil_meeting_app.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Moil Meeting Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Operations of the Moil Meeting
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/perseverance-tech-tw/video-conference-using-fisheye" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Moil Meeting
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Moil Meeting Docs" class="md-nav__button md-logo" aria-label="Moil Meeting Docs" data-md-component="logo">
+      
+  <img src="../assets/images/ui/moil_meeting_app.png" alt="logo">
+
+    </a>
+    Moil Meeting Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/perseverance-tech-tw/video-conference-using-fisheye" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Moil Meeting
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moil Meeting Installation Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../definition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definition and Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moil Meeting Of Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations of the Moil Meeting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations of the Moil Meeting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#application-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Application Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Application Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#operational-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start Guide
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start Guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initial-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#media-source-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Media Source Selection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#switching-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switching Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#camera-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Camera Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Camera Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#starting-the-camera" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting the Camera
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#camera-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Camera Controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recording-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recording Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recording Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-recording" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start Recording
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stop-recording" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stop Recording
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-mode-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detailed Mode Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detailed Mode Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#original-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Original Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#discussion-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discussion Mode
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discussion Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patrol-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Patrol Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#presentation-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Presentation Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Panel
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Panel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#camera-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Camera Information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View Labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-interactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Interactions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Interactions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#right-click-context-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Right-Click Context Menu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anypoint-transformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anypoint Transformation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mouse-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mouse Controls
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mouse Controls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drag-to-move" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drag to Move
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#double-click-to-expand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Double-Click to Expand
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scroll-to-zoom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scroll to Zoom
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="operations-guide">Operations Guide</h1>
+<p>Use this guide to run Moil Meeting day to day. Start with the Quick Start Guide, then return here as a reference.</p>
+<h2 id="application-overview">Application Overview</h2>
+<p><strong>Fisheye Video Conference System</strong> is a video conferencing application designed with a streamlined and modern interface. Upon launch, users are immediately presented with the main dashboard for rapid access to core functionalities.</p>
+<h3 id="operational-modes">Operational Modes</h3>
+<p>The application features several distinct operational modes, accessible via the bottom navigation bar:</p>
+<ul>
+<li><strong>Start Camera</strong> — Activates video capture for all modes.</li>
+<li><strong>Original Mode</strong> — Displays the raw, uncorrected fisheye view.</li>
+<li><strong>Discussion Mode</strong> — Facilitates interactive, multi-participant discussions.</li>
+<li><strong>Global Mode</strong> — Connects participants globally with panoramic views.</li>
+<li><strong>Patrol Mode</strong> — Automated surveillance scanning.</li>
+<li><strong>Presentation Mode</strong> — Optimized for content delivery and focus.</li>
+</ul>
+<p><img
+  src="../assets/images/operations/overview.png"
+  alt="Application Overview"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Main Interface with Mode Selection</em></p>
+<hr />
+<h2 id="quick-start-guide">Quick Start Guide</h2>
+<p>Welcome to <strong>Moil Meeting</strong>, a comprehensive solution for 360° video conferencing and surveillance. Whether hosting a remote meeting, monitoring a wide area, or delivering a presentation, this platform provides the flexibility you need.</p>
+<h3 id="initial-setup">Initial Setup</h3>
+<p>Launch the application to access the main interface.</p>
+<p><img
+  src="../assets/images/operations/start.png"
+  alt="Start Screen"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<h3 id="media-source-selection">Media Source Selection</h3>
+<p>Click the <strong>START CAMERA</strong> button to initiate the video feed. You will be prompted to select a source:</p>
+<ul>
+<li><strong>Open Camera</strong> — Use a connected USB or built-in camera.</li>
+<li><strong>Load Media</strong> — Play a pre-recorded video file.</li>
+<li><strong>Camera URL</strong> — Connect to an IP camera stream.</li>
+</ul>
+<p><img
+  src="../assets/images/operations/original_mode_view.png"
+  alt="Original Mode View"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Original Mode Active</em></p>
+<p>Each source allows for detailed configuration, including resolution and frame rate adjustments.</p>
+<h3 id="switching-modes">Switching Modes</h3>
+<p>Methods of operation can be switched dynamically. The application defaults to <strong>Original Mode</strong> upon initialization.</p>
+<p><img
+  src="../assets/images/operations/disscusion_mode_view.png"
+  alt="Discussion Mode View"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Discussion Mode</em></p>
+<p><img
+  src="../assets/images/operations/patrol_mode_view.png"
+  alt="Patrol Mode View"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Patrol Mode</em></p>
+<p><img
+  src="../assets/images/operations/presentation_mode_view.png"
+  alt="Presentation Mode View"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Presentation Mode</em></p>
+<hr />
+<h2 id="camera-operations">Camera Operations</h2>
+<h3 id="starting-the-camera">Starting the Camera</h3>
+<p><img
+  src="../assets/images/operations/select_media_source_v2.png"
+  alt="Media Source Selection"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Source Selection Dialog</em></p>
+<p><strong>Procedure:</strong></p>
+<ol>
+<li>Click <strong>START CAMERA</strong> at the bottom of the interface.</li>
+<li>Choose your input source in the dialog:</li>
+<li><strong>Open Camera</strong>: For physical devices.</li>
+<li><strong>Load Media</strong>: For file playback.</li>
+<li><strong>Camera URL</strong>: For network streams.</li>
+<li><strong>Token</strong>: For authenticated streams.</li>
+<li>Click <strong>OK</strong> to proceed.</li>
+</ol>
+<h3 id="camera-controls">Camera Controls</h3>
+<p><img
+  src="../assets/images/operations/stop_play.png"
+  alt="Camera Controls"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<p><em>Playback Controls</em></p>
+<p>Once active, use the control bar to manage the feed:</p>
+<ul>
+<li><strong>Stop Camera</strong>: Completely stops the video feed.</li>
+<li><strong>Pause Camera</strong>: Freezes the current frame.</li>
+<li><strong>Play Camera</strong>: Resumes the feed from a paused state.</li>
+</ul>
+<hr />
+<h2 id="recording-functions">Recording Functions</h2>
+<h3 id="start-recording">Start Recording</h3>
+<ol>
+<li>Click the <strong>Start Recording</strong> button.</li>
+<li>A confirmation message, "Recording Started," will appear.</li>
+</ol>
+<p><img
+  src="../assets/images/operations/recording.png"
+  alt="Recording Active"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<p><em>Recording Active</em></p>
+<h3 id="stop-recording">Stop Recording</h3>
+<ol>
+<li>Click <strong>Stop Recording</strong>.</li>
+<li>A "Recording Finished" confirmation will display the saved file path.</li>
+</ol>
+<p><img
+  src="../assets/images/operations/stop_record.png"
+  alt="Recording Complete"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<p><em>Recording Saved</em></p>
+<hr />
+<h2 id="detailed-mode-operations">Detailed Mode Operations</h2>
+<h3 id="original-mode">Original Mode</h3>
+<p>Displays the full <strong>360-degree fisheye view</strong>. This mode shows the complete, distorted image as captured by the sensor.</p>
+<p><img
+  src="../assets/images/operations/original.png"
+  alt="Original Mode"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>360° Fisheye View</em></p>
+<p><strong>Key Benefits:</strong></p>
+<ul>
+<li><strong>Total Coverage:</strong> Eliminates blind spots by capturing the entire room.</li>
+<li><strong>Situational Awareness:</strong> Provides full context for surveillance or large meetings.</li>
+<li><strong>Simplicity:</strong> No need for manual pan/tilt adjustments.</li>
+</ul>
+<h3 id="discussion-mode">Discussion Mode</h3>
+<p>Designed for multi-participant meetings, this mode creates virtual "cameras" from the single fisheye source.</p>
+<p><img
+  src="../assets/images/operations/disscusion_newversion.png"
+  alt="Discussion Mode"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Discussion Mode Interface</em></p>
+<h4 id="configuration">Configuration</h4>
+<p>Access settings via the <strong>Config Button</strong>:</p>
+<p><img
+  src="../assets/images/operations/config_v2.png"
+  alt="Config Button"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<p><strong>Features:</strong>
+- <strong>Limit Person</strong>: Choose between 2, 3, 4, 6, or 8 participant views.
+- <strong>View List</strong>: Manage individual views (Pause, Reorder, Configure).
+- <strong>Layout Slider</strong>: Dynamically resize video windows.
+- <strong>Panorama</strong>: Toggle the panoramic strip at the top.</p>
+<p><img
+  src="../assets/images/operations/limit_person.png"
+  alt="Limit Person"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Participant Limit Selection</em></p>
+<p><strong>Panorama Toggle:</strong>
+- <strong>Show Panorama</strong>: Enables a wide strip showing the entire room context.
+- <strong>Hide Panorama</strong>: Focuses solely on individual participants.</p>
+<p><img
+  src="../assets/images/operations/right_clicked_v2.png"
+  alt="Right-Click Menu"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<p><em>Right-click Context Menu</em></p>
+<h3 id="global-mode">Global Mode</h3>
+<p>Displays a dual-panoramic strip, effectively "unwrapping" the 360° image into a flat view.</p>
+<p><img
+  src="../assets/images/operations/global_mode.png"
+  alt="Global Mode"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<p><em>Global Panoramic View</em></p>
+<p><strong>Features:</strong>
+- <strong>Dual Views</strong>: View two different panoramic angles simultaneously.
+- <strong>Flip Controls</strong>: Orientation adjustment.</p>
+<h3 id="patrol-mode">Patrol Mode</h3>
+<p>Automates monitoring by panning the virtual view across the panoramic scene.</p>
+<p><img
+  src="../assets/images/operations/patrol_mode_v2.png"
+  alt="Patrol Mode"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Patrol Mode</em></p>
+<p><strong>Features:</strong>
+- <strong>Instant Activation</strong>: Begins scanning immediately upon selection.
+- <strong>Dynamic Control</strong>: Use the slider to manually override or adjust the view.</p>
+<h3 id="presentation-mode">Presentation Mode</h3>
+<p>Focuses on a specific area of interest, such as a whiteboard or speaker, while minimizing distortion.</p>
+<p><img
+  src="../assets/images/operations/presentation_mode_v2.png"
+  alt="Presentation Mode"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Presentation Focus</em></p>
+<p><strong>Usage:</strong>
+1. Select <strong>Presentation Mode</strong>.
+2. Use <strong>Dialog Transformation</strong> (Right-click) to fine-tune the region of interest.</p>
+<hr />
+<h2 id="configuration-panel">Configuration Panel</h2>
+<p>Access system-wide settings via the <strong>Config Button</strong>.</p>
+<h3 id="camera-information">Camera Information</h3>
+<p>Displays technical details about the current video source.</p>
+<p><img
+  src="../assets/images/operations/camera_information_v2.png"
+  alt="Camera Information"
+  style="width: 100%; height: auto; display: block;"
+/></p>
+<ul>
+<li><strong>Model &amp; Version</strong>: Hardware and software identifiers.</li>
+<li><strong>Video Stats</strong>: Resolution and Field of View (FOV).</li>
+<li><strong>Update Check</strong>: Provides a download link if a new version is detected.</li>
+</ul>
+<h3 id="view-labels">View Labels</h3>
+<p>Toggle overlay labels for camera views.</p>
+<p><img
+  src="../assets/images/operations/view_number_v2.png"
+  alt="Show View Number"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Labels Visible</em></p>
+<p><img
+  src="../assets/images/operations/hide_view_number_v2.png"
+  alt="Hide View Number"
+  style="width: 100%; height: auto; display: block;"
+/>
+<em>Labels Hidden</em></p>
+<p><strong>Reset Labels:</strong> Restores default naming and positioning.</p>
+<h3 id="advanced-controls">Advanced Controls</h3>
+<ul>
+<li><strong>Flip Camera</strong>: Correct orientation (Upside, Front, Downside).</li>
+<li><strong>Panorama Config</strong>: Fine-tune the alpha/beta angles and cropping of the panoramic view.</li>
+<li><strong>Resolution</strong>: Adjust output quality per view.</li>
+<li><strong>UI Scale</strong>: Increase or decrease interface size for readability.</li>
+<li><strong>Cache</strong>: Import/Export/Reset configuration cache.</li>
+</ul>
+<p><img alt="Resolution Settings" src="../assets/images/operations/resolution_v2.png" /></p>
+<hr />
+<h2 id="advanced-interactions">Advanced Interactions</h2>
+<h3 id="right-click-context-menu">Right-Click Context Menu</h3>
+<p>Available in all modes for rapid access to view-specific tools.</p>
+<p><img alt="Right-Click Menu" src="../assets/images/operations/right_clicked_v2.0.png" /></p>
+<ul>
+<li><strong>View Information</strong>: Detailed stats for the specific view.</li>
+<li><strong>Save Image As</strong>: Capture a snapshot.</li>
+<li><strong>Show Original Image</strong>: Quickly toggle to the raw fisheye feed.</li>
+<li><strong>Pause View</strong>: Freeze a specific quadrant.</li>
+<li><strong>Configuration View Setting</strong>: Deep-dive into Anypoint transformation parameters.</li>
+</ul>
+<h3 id="anypoint-transformation">Anypoint Transformation</h3>
+<p>Customize how a specific view is de-warped.</p>
+<p><img alt="Configuration View" src="../assets/images/operations/configuration_v2.png" />
+<em>Transformation Settings</em></p>
+<p><strong>Parameters:</strong>
+- <strong>Alpha/Beta</strong>: Adjust the viewing angle.
+- <strong>Zoom</strong>: Control magnification.
+- <strong>Lock AI</strong>: Prevent auto-tracking from moving this view.</p>
+<p><img alt="Adjusted Transform" src="../assets/images/operations/camera_information_v2.png" />
+<em>Visual Adjustment Tool</em></p>
+<div class="admonition note">
+<p class="admonition-title">Mouse Press Event</p>
+<p>Mouse interactions significantly enhance navigation control across all modes.</p>
+</div>
+<hr />
+<h2 id="mouse-controls">Mouse Controls</h2>
+<h3 id="drag-to-move">Drag to Move</h3>
+<p>Click and drag within a view to shift the visible region.</p>
+<p><img alt="Mouse Drag" src="../assets/images/operations/mouse_drag.png" /></p>
+<h3 id="double-click-to-expand">Double-Click to Expand</h3>
+<p>Double-click any view to maximize it to full screen.</p>
+<p><img alt="Double-Click" src="../assets/images/operations/double_clicked.png" /></p>
+<h3 id="scroll-to-zoom">Scroll to Zoom</h3>
+<p>Use the mouse wheel to zoom in and out.</p>
+<p><img alt="Scroll Zoom" src="../assets/images/operations/scroll_up_down.png" /></p>
+<div class="admonition note">
+<p class="admonition-title">Tip</p>
+<p>Use <strong>Transformation</strong> and <strong>Adjusted Transform</strong> features to precisely focus on specific objects while referencing the original image for context.</p>
+</div>
+<hr />
+<p><em>For further assistance, please contact the Moil Meeting support team.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <!--
+  Custom footer with Moil Meeting branding
+-->
+<footer class="md-footer">
+    <!-- Custom footer content with logo and title -->
+    <div class="md-footer-meta md-typeset">
+        <div class="md-footer-meta__inner md-grid">
+            <!-- Custom branding section -->
+            <div class="md-footer-branding">
+                <a href=".." class="md-footer-branding__link">
+                    <img src="../assets/images/ui/moil_meeting_app.png" alt="Moil Meeting"
+                        class="md-footer-branding__logo">
+                    <span class="md-footer-branding__title">Moil Meeting</span>
+                </a>
+            </div>
+
+            <!-- Copyright and links -->
+            <div class="md-footer-copyright">
+                <div class="md-footer-copyright__highlight">
+                    
+                    &copy; 2026 Moil Meeting. All rights reserved.
+                    
+                </div>
+            </div>
+
+            <!-- Social links (optional) -->
+            
+        </div>
+    </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "content.code.copy", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/scroll-animate.js"></script>
+      
+    
+  </body>
+</html>
