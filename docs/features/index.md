@@ -47,3 +47,11 @@ Multilingual Interface designed to bridge communication gaps and enhance accessi
 
 ![Multilingual Interface](../assets/images/features/multiple_language.png)
 *Multilingual Interface*
+
+#### Dynamic Border Color
+
+Enhances visual organization by allowing users to customize frame highlights through an integrated color picker, ensuring clear distinction between different camera feeds or operational zones.
+
+![Dynamic Border Color](../assets/images/features/border_color.png)
+*Dynamic Border Color*
+

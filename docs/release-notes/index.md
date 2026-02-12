@@ -34,6 +34,7 @@ Moil Meeting v2.0 is a significant leap forward in usability and control. The ap
 -   **Configuration Panel:** Camera info and update checks, view labels, flip orientation, panorama config, resolution, UI scale, and cache management.
 -   **Shortcut Support:** Keyboard shortcuts to assist users with **minimal mouse** usage.
 -   **Multilingual Interface:** Support for multiple languages to enhance accessibility for a global user base.
+-   **Dynamic Border Color:** Enhances visual organization by allowing users to customize frame highlights through an integrated color picker.
 
 ### Improvements
 
