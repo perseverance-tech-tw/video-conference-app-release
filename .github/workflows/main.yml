@@ -265,29 +265,43 @@ jobs:
             arm64v8/python:3.9-slim bash -c "
               set -e
       
+              echo '==> Install system dependencies'
               apt-get update && apt-get install -y \
                 libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
                 libx11-6 libxcb1 libxkbcommon0 p7zip-full binutils \
+                python3-venv \
                 && rm -rf /var/lib/apt/lists/*
       
-              pip install --upgrade pip
+              echo '==> Create .venv'
+              python3 -m venv /app/.venv
       
-              pip install --no-cache-dir -r /app/requirements-aarch64.txt
+              echo '==> Upgrade pip inside .venv'
+              /app/.venv/bin/pip install --upgrade pip
       
+              echo '==> Install dependencies inside .venv'
+              /app/.venv/bin/pip install --no-cache-dir -r /app/requirements-aarch64.txt
+      
+              echo '==> Update version.txt'
               echo \$TAG_NAME > /app/version.txt
+      
+              echo '==> Build with PyInstaller'
               cd /app
               mkdir -p dist/aarch64
-              pyinstaller --clean --distpath dist/aarch64 video-conference-using-fisheye.spec
+              /app/.venv/bin/pyinstaller --clean --distpath dist/aarch64 video-conference-using-fisheye.spec
       
+              echo '==> Copy install/uninstall scripts'
               appdir=\$(find dist/aarch64 -maxdepth 1 -type d -not -path 'dist/aarch64' | head -n1)
               cp dist/install.sh \"\$appdir\"/
               cp dist/uninstall.sh \"\$appdir\"/
               chmod +x \"\$appdir\"/install.sh \"\$appdir\"/uninstall.sh
       
+              echo '==> Compress to .7z'
               cd dist/aarch64
               appdir=\$(find . -maxdepth 1 -type d -not -path '.' | head -n1)
               7z a -t7z -m0=lzma2 -mx=9 -ms=on \
                 ../FisheyeVideoConferenceSystem-\${TAG_NAME}-aarch64.7z \"\$appdir\"
+              echo 'Archive created:'
+              ls -lh ../FisheyeVideoConferenceSystem-\${TAG_NAME}-aarch64.7z
               7z t ../FisheyeVideoConferenceSystem-\${TAG_NAME}-aarch64.7z
             "
             
