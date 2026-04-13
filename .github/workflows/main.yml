@@ -1,5 +1,5 @@
 name: Fisheye Video Conference System
- 
+
 on:
   workflow_dispatch:
 
@@ -18,17 +18,14 @@ jobs:
           fetch-tags: true
           
       - name: Checkout Private Repository
-        run: |
-          # Clone the private repository
-          git clone --branch release https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
-          
-          # Change to the directory of the cloned repository
-          cd video-conference-using-fisheye
-          
-          # Optionally, verify that the repository is cloned
-          echo "Listing contents of the cloned repository:"
-          Get-ChildItem -Force -Recurse
         shell: pwsh
+        run: |
+          git clone --single-branch --depth 1 --branch releasev2 https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
+          cd video-conference-using-fisheye
+          git fetch origin releasev2 --depth 1
+          git reset --hard origin/releasev2
+          Write-Host "Listing contents of the cloned repository:"
+          Get-ChildItem -Force -Recurse
           
       - name: Set up Python 3.9.13
         uses: actions/setup-python@v4
@@ -41,17 +38,16 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --prune
-          latest_tag=$(git tag --sort=-v:refname | grep '^v1\.1\.' | head -n 1 || true)
+          latest_tag=$(git tag --sort=-v:refname | grep '^v2\.0\.' | head -n 1 || true)
           if [ -z "$latest_tag" ]; then
-            next_tag="v1.1.0"
+            next_tag="v2.0.0"
           else
-            patch=${latest_tag##v1.1.}
+            patch=${latest_tag##v2.0.}
             next_patch=$((patch + 1))
-            next_tag="v1.1.$next_patch"
+            next_tag="v2.0.$next_patch"
           fi
           echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
           echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
-        working-directory: video-conference-using-fisheye
         
       - name: Update version.txt
         shell: bash
@@ -61,16 +57,11 @@ jobs:
       - name: Replace version placeholder in ISS file
         shell: bash
         run: |
-        
-          # Verify the dist directory and setup_script.iss file exist before replacing version
           if [ ! -f "dist/setup_script.iss" ]; then
             echo "setup_script.iss not found in dist/"
             exit 1
           fi
-
-          # Replace version placeholder in setup_script.iss with the correct TAG_NAME
           sed -i "s/__VERSION__/${{ env.TAG_NAME }}/g" dist/setup_script.iss
-          
         working-directory: video-conference-using-fisheye
 
       - name: Install dependencies
@@ -78,7 +69,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install --no-cache-dir -r requirements.txt
-          
         working-directory: video-conference-using-fisheye
 
       - name: Build with PyInstaller
@@ -104,7 +94,6 @@ jobs:
           set -euo pipefail
           if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
             prev=$(git describe --tags --abbrev=0 HEAD^)
-
           else
             prev=""
           fi
@@ -116,29 +105,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          
-          # Generate the changelog using git log
           if [ -n "${{ steps.previoustag.outputs.tag }}" ]; then
             log_output=$(git log ${{ steps.previoustag.outputs.tag }}..HEAD --pretty=format:"- %s (%h)")
           else
             log_output=$(git log --pretty=format:"- %s (%h)")
           fi
-      
-          # Replace newlines with spaces or another delimiter to format as a single string
           log_output=$(echo "$log_output" | tr '\n' ' ')
-
-          # Ensure there is no leading/trailing space
           log_output=$(echo "$log_output" | xargs)
-      
-          # Output the changelog to GITHUB_OUTPUT
           echo "log=$log_output" >> "$GITHUB_OUTPUT"
-
         working-directory: video-conference-using-fisheye
         
       - name: Upload Windows Artifact to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # Pakai glob agar aman jika nama file installer berbeda tipis
           files: |
             video-conference-using-fisheye/dist/Output/*Fisheye*${{ env.TAG_NAME }}*.exe
           tag_name: ${{ env.TAG_NAME }}
@@ -161,13 +140,8 @@ jobs:
 
       - name: Checkout Private Repository
         run: |
-          # Clone the private repository
-          git clone --branch release https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
-          
-          # Change to the directory of the cloned repository
+          git clone --branch releasev2 https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
           cd video-conference-using-fisheye
-          
-          # Optionally, verify that the repository is cloned
           echo "Listing contents of the cloned repository:"
           ls -l
 
@@ -190,7 +164,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt
+          pip install --no-cache-dir -r requirements-linux.txt
         working-directory: video-conference-using-fisheye
         
       - name: Create dist/linux folder
@@ -206,12 +180,17 @@ jobs:
       - name: Copy install.sh and uninstall.sh into dist/linux folder
         shell: bash
         run: |
-          # Pastikan folder hasil PyInstaller sesuai dengan nama app Anda
+          set -euo pipefail
           appdir="dist/linux/FisheyeVideoConferenceSystem"
           if [ ! -d "$appdir" ]; then
-            # fallback: ambil folder pertama di dist/linux
-            appdir=$(find dist/linux -maxdepth 1 -type d -not -path 'dist/linux' | head -n1)
+            appdir=$(find dist/linux -maxdepth 1 -type d -not -path 'dist/linux' | head -n1 || true)
           fi
+          if [ -z "${appdir:-}" ] || [ ! -d "$appdir" ]; then
+            echo "ERROR: Could not find app output folder under dist/linux"
+            ls -la dist/linux || true
+            exit 1
+          fi
+          echo "App directory detected: $appdir"
           cp dist/install.sh "$appdir"/
           cp dist/uninstall.sh "$appdir"/
           chmod +x "$appdir"/install.sh "$appdir"/uninstall.sh
@@ -222,34 +201,111 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
         working-directory: video-conference-using-fisheye
         
-      - name: Compress to .7z using LZMA
-        shell: bash
-        run: |
-          cd dist/linux
-          # cari folder app yang berisi binary hasil PyInstaller
-          appdir=$(find . -maxdepth 1 -type d -not -path '.' | head -n1)
-          7z a -t7z -m0=lzma -mx=9 -ms=on ../FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z "$appdir"
-        working-directory: video-conference-using-fisheye
-        
-      - name: Get previous tag (robust)
-        id: previoustag
+      - name: Compress to .7z (LZMA2) and self-test
         shell: bash
         run: |
           set -euo pipefail
-          if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
-            prev=$(git describe --tags --abbrev=0 HEAD^)
-          else
-            prev=""
-          fi
-          echo "tag=$prev" >> "$GITHUB_OUTPUT"
+          cd dist/linux
+          appdir=$(find . -maxdepth 1 -type d -not -path '.' | head -n1)
+          echo "Zipping folder: $appdir"
+          out="../FisheyeVideoConferenceSystem-${TAG_NAME}-linux.7z"
+          7z a -t7z -m0=lzma2 -mx=9 -ms=on "$out" "$appdir"
+          echo "Archive created:"
+          ls -lh "$out"
+          echo "Testing archive integrity…"
+          7z t "$out"
         working-directory: video-conference-using-fisheye
         
       - name: Upload Linux Artifact to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z
+          files: |
+            video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z
           tag_name: ${{ env.TAG_NAME }}
-          body: |
-            Fisheye Video Conference System ${{ env.TAG_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================
+  # BUILD AARCH64 (QEMU emulation di ubuntu-latest)
+  # ============================================================
+  build-aarch64:
+    runs-on: ubuntu-latest
+    needs: build-windows
+
+    steps:
+      - name: Checkout repository (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout Private Repository
+        run: |
+          git clone --branch releasev2 https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
+          cd video-conference-using-fisheye
+          echo "Listing contents of the cloned repository:"
+          ls -l
+
+      - name: Set TAG_NAME from Windows job
+        run: echo "TAG_NAME=${{ needs.build-windows.outputs.tag_name }}" >> "$GITHUB_ENV"
+
+      - name: Set up QEMU for aarch64 emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build aarch64 inside Docker (QEMU)
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v ${{ github.workspace }}/video-conference-using-fisheye:/app \
+            -e TAG_NAME=${{ env.TAG_NAME }} \
+            arm64v8/python:3.8-slim bash -c "
+              set -e
+      
+              apt-get update && apt-get install -y \
+                libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
+                libx11-6 libxcb1 libxkbcommon0 p7zip-full binutils \
+                && rm -rf /var/lib/apt/lists/*
+      
+              pip install --upgrade pip
+      
+              # Install dari requirements-aarch64.txt
+              pip install --no-cache-dir -r /app/requirements-aarch64.txt
+      
+              # Install mediapipe terpisah tanpa deps
+              pip install mediapipe==0.10.11 --no-deps
+      
+              # Patch mediapipe untuk Python 3.8
+              grep -rl '-> list\[' /usr/local/lib/python3.8/dist-packages/mediapipe/ | \
+                xargs sed -i 's/) -> list\[/) -> List[/g' || true
+              grep -rl ') -> List\[' /usr/local/lib/python3.8/dist-packages/mediapipe/ | \
+                xargs sed -i '1s/^/from typing import List\n/' || true
+      
+              echo \$TAG_NAME > /app/version.txt
+              cd /app
+              mkdir -p dist/aarch64
+              pyinstaller --clean --distpath dist/aarch64 video-conference-using-fisheye.spec
+      
+              appdir=\$(find dist/aarch64 -maxdepth 1 -type d -not -path 'dist/aarch64' | head -n1)
+              cp dist/install.sh \"\$appdir\"/
+              cp dist/uninstall.sh \"\$appdir\"/
+              chmod +x \"\$appdir\"/install.sh \"\$appdir\"/uninstall.sh
+      
+              cd dist/aarch64
+              appdir=\$(find . -maxdepth 1 -type d -not -path '.' | head -n1)
+              7z a -t7z -m0=lzma2 -mx=9 -ms=on \
+                ../FisheyeVideoConferenceSystem-\${TAG_NAME}-aarch64.7z \"\$appdir\"
+              7z t ../FisheyeVideoConferenceSystem-\${TAG_NAME}-aarch64.7z
+            "
+            
+      - name: Upload aarch64 Artifact to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-aarch64.7z
+          tag_name: ${{ env.TAG_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
