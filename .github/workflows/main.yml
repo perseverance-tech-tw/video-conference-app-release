@@ -272,17 +272,7 @@ jobs:
       
               pip install --upgrade pip
       
-              # Install dari requirements-aarch64.txt
               pip install --no-cache-dir -r /app/requirements-aarch64.txt
-      
-              # Install mediapipe terpisah tanpa deps
-              pip install mediapipe==0.10.11 --no-deps
-      
-              # Patch mediapipe untuk Python 3.8
-              grep -rl '-> list\[' /usr/local/lib/python3.8/dist-packages/mediapipe/ | \
-                xargs sed -i 's/) -> list\[/) -> List[/g' || true
-              grep -rl ') -> List\[' /usr/local/lib/python3.8/dist-packages/mediapipe/ | \
-                xargs sed -i '1s/^/from typing import List\n/' || true
       
               echo \$TAG_NAME > /app/version.txt
               cd /app
