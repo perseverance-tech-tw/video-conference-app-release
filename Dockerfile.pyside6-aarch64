@@ -1,19 +1,48 @@
-FROM python:3.8-bullseye
+FROM arm64v8/debian:buster-slim
 
-RUN apt-get update && apt-get install -y \
-    patchelf \
-    libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
+# Fix Debian Buster EOL repository
+RUN echo "deb http://archive.debian.org/debian buster main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian-security buster/updates main contrib non-free" >> /etc/apt/sources.list
+
+# Install system dependencies + Python 3.8 build deps
+RUN apt-get update -o Acquire::Check-Valid-Until=false && apt-get install -y \
+    build-essential cmake git ninja-build curl wget patchelf \
+    libgl1-mesa-glx libglib2.0-0 libsm6 libxrender1 libxext6 \
     libx11-6 libxcb1 libxkbcommon0 p7zip-full binutils \
-    build-essential cmake git \
     pkg-config libhdf5-dev \
-    v4l2loopback-utils \
+    libssl-dev libffi-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev liblzma-dev \
+    libncurses5-dev libncursesw5-dev xz-utils tk-dev \
+    clang-7 libclang-7-dev llvm-7 \
+    qt5-default qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
+    qtdeclarative5-dev qtmultimedia5-dev \
+    libqt5svg5-dev libqt5opengl5-dev libqt5x11extras5-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m venv /opt/venv
+# Symlink clang
+RUN ln -sf /usr/bin/clang-7 /usr/bin/clang && \
+    ln -sf /usr/bin/clang++-7 /usr/bin/clang++
+
+# Build Python 3.8 from source (glibc 2.28 compatible)
+RUN wget https://www.python.org/ftp/python/3.8.20/Python-3.8.20.tgz && \
+    tar -xzf Python-3.8.20.tgz && \
+    cd Python-3.8.20 && \
+    ./configure --enable-optimizations --prefix=/opt/python3.8 && \
+    make -j$(nproc) && \
+    make install && \
+    cd .. && rm -rf Python-3.8.20 Python-3.8.20.tgz
+
+ENV PATH="/opt/python3.8/bin:$PATH"
+
+# Create venv
+RUN python3.8 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Upgrade pip
 RUN pip install --upgrade pip setuptools wheel
 
+# Install PySide6
 RUN pip install --no-cache-dir PySide6==6.6.3.1 shiboken6==6.6.3.1
 
+# Verify
 RUN python -c "import PySide6; print('PySide6 OK:', PySide6.__version__)"
