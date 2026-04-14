@@ -60,6 +60,7 @@ jobs:
                 libx11-6 libxcb1 libxkbcommon0 p7zip-full binutils \
                 python3-venv python3-dev \
                 build-essential cmake git \
+                apt-get install -y v4l2loopback-dkms linux-headers-generic || true \
                 v4l2loopback-utils \
                 pkg-config libhdf5-dev \
                 && rm -rf /var/lib/apt/lists/*
@@ -70,23 +71,22 @@ jobs:
               echo '==> Upgrade pip inside .venv'
               /app/.venv/bin/pip install --upgrade pip
 
-              echo '==> Install dependencies inside .venv'
-              /app/.venv/bin/pip install --no-cache-dir -r /app/requirements-aarch64.txt
-
-              echo '==> Install pyvirtualcam from source'
-              /app/.venv/bin/pip install --no-cache-dir \
-                --no-binary pyvirtualcam \
-                pyvirtualcam || echo 'pyvirtualcam skipped'
-
               echo '==> Install mediapipe without deps'
-              /app/.venv/bin/pip install mediapipe==0.10.9 --no-deps
+              /app/.venv/bin/pip install mediapipe==0.10.7 --no-deps
 
               echo '==> Patch mediapipe for Python 3.8'
-              SITE_PACKAGES=\$(/app/.venv/bin/python -c 'import site; print(site.getsitepackages()[0])')
-              grep -rl '-> list\[' \"\$SITE_PACKAGES/mediapipe/\" | \
-                xargs sed -i 's/) -> list\[/) -> List[/g' || true
-              grep -rl ') -> List\[' \"\$SITE_PACKAGES/mediapipe/\" | \
-                xargs sed -i '1s/^/from typing import List\n/' || true
+              SITE_PACKAGES=$(/app/.venv/bin/python -c 'import site; print(site.getsitepackages()[0])')
+              find "$SITE_PACKAGES/mediapipe/" -name "*.py" -exec grep -l 'list\[' {} \; | \
+                xargs -I{} sed -i 's/) -> list\[/) -> List[/g' {}
+              find "$SITE_PACKAGES/mediapipe/" -name "*.py" -exec grep -l 'List\[' {} \; | \
+                xargs -I{} sed -i '1s/^/from typing import List\n/' {}
+
+              echo '==> Install pyvirtualcam from GitHub source'
+              /app/.venv/bin/pip install --no-cache-dir \
+                git+https://github.com/letmaik/pyvirtualcam.git@v0.11.1 || echo 'pyvirtualcam skipped'
+
+              echo '==> Install remaining dependencies'
+              /app/.venv/bin/pip install --no-cache-dir -r /app/requirements-aarch64.txt
 
               echo '==> Update version.txt'
               echo \$TAG_NAME > /app/version.txt
