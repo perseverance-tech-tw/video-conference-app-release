@@ -71,6 +71,15 @@ jobs:
       
               echo "==> Upgrade pip inside .venv"
               /app/.venv/bin/pip install --upgrade pip setuptools wheel
+
+              echo "==> Install PySide6 dependencies"
+              apt-get update -o Acquire::Check-Valid-Until=false && apt-get install -y \
+                qt5-default qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
+                libqt5gui5 libqt5widgets5 libqt5core5a \
+                && rm -rf /var/lib/apt/lists/*
+
+              echo "==> Install PySide2 as PySide6 replacement"
+              /app/.venv/bin/pip install PySide2 || echo "PySide2 skipped"
       
               echo "==> Install mediapipe without deps"
               /app/.venv/bin/pip install mediapipe==0.10.7 --no-deps
