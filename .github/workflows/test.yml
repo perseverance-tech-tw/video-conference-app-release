@@ -51,21 +51,21 @@ jobs:
           docker run --rm --platform linux/arm64 \
             -v ${{ github.workspace }}/video-conference-using-fisheye:/app \
             -e TAG_NAME=${{ env.TAG_NAME }} \
-            arm64v8/python:3.8-slim bash -c '
+            arm64v8/debian:buster-slim bash -c '
               set -e
 
-              echo "==> Install system dependencies"
+              echo "==> Install system dependencies + Python 3.8"
               apt-get update && apt-get install -y \
+                python3.8 python3.8-venv python3.8-dev python3-pip \
                 libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
                 libx11-6 libxcb1 libxkbcommon0 p7zip-full binutils \
-                python3-venv python3-dev \
                 build-essential cmake git \
                 v4l2loopback-utils \
                 pkg-config libhdf5-dev \
                 && rm -rf /var/lib/apt/lists/*
 
               echo "==> Create .venv"
-              python3 -m venv /app/.venv
+              python3.8 -m venv /app/.venv
 
               echo "==> Upgrade pip inside .venv"
               /app/.venv/bin/pip install --upgrade pip
@@ -111,7 +111,7 @@ jobs:
               ls -lh ../FisheyeVideoConferenceSystem-${TAG_NAME}-aarch64.7z
               7z t ../FisheyeVideoConferenceSystem-${TAG_NAME}-aarch64.7z
             '
-
+            
       - name: Get previous tag (robust)
         id: previoustag
         shell: bash
