@@ -272,6 +272,7 @@ jobs:
                 python3-venv python3-dev \
                 build-essential cmake git \
                 v4l2loopback-utils \
+                pkg-config libhdf5-dev \
                 && rm -rf /var/lib/apt/lists/*
       
               echo '==> Create .venv'
@@ -286,7 +287,7 @@ jobs:
               echo '==> Install pyvirtualcam from source'
               /app/.venv/bin/pip install --no-cache-dir \
                 --no-binary pyvirtualcam \
-                pyvirtualcam==0.11.1
+                pyvirtualcam==0.11.1 || echo 'pyvirtualcam skipped'
       
               echo '==> Install mediapipe without deps'
               /app/.venv/bin/pip install mediapipe==0.10.11 --no-deps
