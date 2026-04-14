@@ -1,4 +1,52 @@
-- name: Build aarch64 inside Docker (QEMU)
+name: Fisheye Video Conference System - aarch64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-aarch64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout Private Repository
+        run: |
+          git clone --branch releasev2 https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
+          cd video-conference-using-fisheye
+          echo "Listing contents of the cloned repository:"
+          ls -l
+
+      - name: Generate Tag Name from latest Git tag
+        id: generate_tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --prune
+          latest_tag=$(git tag --sort=-v:refname | grep '^v2\.0\.' | head -n 1 || true)
+          if [ -z "$latest_tag" ]; then
+            next_tag="v2.0.0"
+          else
+            patch=${latest_tag##v2.0.}
+            next_patch=$((patch + 1))
+            next_tag="v2.0.$next_patch"
+          fi
+          echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
+          echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU for aarch64 emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build aarch64 inside Docker (QEMU)
         run: |
           docker run --rm --platform linux/arm64 \
             -v ${{ github.workspace }}/video-conference-using-fisheye:/app \
@@ -92,3 +140,43 @@
               ls -lh ../FisheyeVideoConferenceSystem-${TAG_NAME}-aarch64.7z
               7z t ../FisheyeVideoConferenceSystem-${TAG_NAME}-aarch64.7z
             '
+            
+      - name: Get previous tag (robust)
+        id: previoustag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
+            prev=$(git describe --tags --abbrev=0 HEAD^)
+          else
+            prev=""
+          fi
+          echo "tag=$prev" >> "$GITHUB_OUTPUT"
+        working-directory: video-conference-using-fisheye
+
+      - name: Generate changelog
+        id: changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${{ steps.previoustag.outputs.tag }}" ]; then
+            log_output=$(git log ${{ steps.previoustag.outputs.tag }}..HEAD --pretty=format:"- %s (%h)")
+          else
+            log_output=$(git log --pretty=format:"- %s (%h)")
+          fi
+          log_output=$(echo "$log_output" | tr '\n' ' ')
+          log_output=$(echo "$log_output" | xargs)
+          echo "log=$log_output" >> "$GITHUB_OUTPUT"
+        working-directory: video-conference-using-fisheye
+
+      - name: Upload aarch64 Artifact to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-aarch64.7z
+          tag_name: ${{ env.TAG_NAME }}
+          body: |
+            Fisheye Video Conference System ${{ env.TAG_NAME }} (aarch64)
+            ${{ steps.changelog.outputs.log }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
