@@ -1,148 +1,94 @@
-name: Fisheye Video Conference System - aarch64
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build-aarch64:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository (full history + tags)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Checkout Private Repository
-        run: |
-          git clone --branch releasev2 https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
-          cd video-conference-using-fisheye
-          echo "Listing contents of the cloned repository:"
-          ls -l
-
-      - name: Generate Tag Name from latest Git tag
-        id: generate_tag
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --tags --prune
-          latest_tag=$(git tag --sort=-v:refname | grep '^v2\.0\.' | head -n 1 || true)
-          if [ -z "$latest_tag" ]; then
-            next_tag="v2.0.0"
-          else
-            patch=${latest_tag##v2.0.}
-            next_patch=$((patch + 1))
-            next_tag="v2.0.$next_patch"
-          fi
-          echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
-          echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU for aarch64 emulation
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build aarch64 inside Docker (QEMU)
+- name: Build aarch64 inside Docker (QEMU)
         run: |
           docker run --rm --platform linux/arm64 \
             -v ${{ github.workspace }}/video-conference-using-fisheye:/app \
             -e TAG_NAME=${{ env.TAG_NAME }} \
             python:3.8-slim-buster bash -c '
               set -e
-      
+
               echo "==> Fix Debian Buster EOL repository"
               echo "deb http://archive.debian.org/debian buster main contrib non-free" > /etc/apt/sources.list
               echo "deb http://archive.debian.org/debian-security buster/updates main contrib non-free" >> /etc/apt/sources.list
-      
+
               echo "==> Install system dependencies"
               apt-get update -o Acquire::Check-Valid-Until=false && apt-get install -y \
                 libgl1-mesa-glx libglib2.0-0 libsm6 libxrender1 libxext6 \
                 libx11-6 libxcb1 libxkbcommon0 p7zip-full binutils \
-                build-essential cmake git \
+                build-essential cmake git ninja-build \
                 pkg-config libhdf5-dev \
+                qt5-default qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
+                qtdeclarative5-dev qtmultimedia5-dev qtwebengine5-dev \
+                libqt5svg5-dev libqt5opengl5-dev libqt5x11extras5-dev \
+                clang libclang-dev llvm \
+                python3-dev \
                 && rm -rf /var/lib/apt/lists/*
-      
+
               echo "==> Create .venv"
               python -m venv /app/.venv
-      
+
               echo "==> Upgrade pip inside .venv"
               /app/.venv/bin/pip install --upgrade pip setuptools wheel
 
-              echo "==> Install PySide6 dependencies"
-              apt-get update -o Acquire::Check-Valid-Until=false && apt-get install -y \
-                qt5-default qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
-                libqt5gui5 libqt5widgets5 libqt5core5a \
-                && rm -rf /var/lib/apt/lists/*
+              echo "==> Install shiboken6 and PySide6 build deps"
+              /app/.venv/bin/pip install \
+                setuptools wheel packaging \
+                sphinx breathe \
+                numpy
 
-              echo "==> Install PySide2 as PySide6 replacement"
-              /app/.venv/bin/pip install PySide2 || echo "PySide2 skipped"
-      
+              echo "==> Build and install shiboken6 from source"
+              /app/.venv/bin/pip install --no-cache-dir \
+                --index-url https://download.qt.io/official_releases/QtForPython/ \
+                shiboken6==6.6.3.1 || \
+              /app/.venv/bin/pip install --no-cache-dir \
+                shiboken6==6.6.3.1 --no-binary shiboken6 || \
+              echo "shiboken6 from index failed, trying PyPI..."
+
+              echo "==> Install PySide6 from source"
+              /app/.venv/bin/pip install --no-cache-dir \
+                PySide6==6.6.3.1 --no-binary PySide6 || \
+              echo "PySide6 build from source failed"
+
+              echo "==> Verify PySide6"
+              /app/.venv/bin/python -c "import PySide6; print(PySide6.__version__)" || \
+              echo "WARNING: PySide6 not available"
+
               echo "==> Install mediapipe without deps"
               /app/.venv/bin/pip install mediapipe==0.10.7 --no-deps
-      
+
               echo "==> Patch mediapipe for Python 3.8"
               SITE_PACKAGES=$(/app/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
               find "$SITE_PACKAGES/mediapipe/" -name "*.py" | xargs grep -l "list\[" 2>/dev/null | \
                 xargs -I{} sed -i "s/) -> list\[/) -> List[/g" {} || true
               find "$SITE_PACKAGES/mediapipe/" -name "*.py" | xargs grep -l "List\[" 2>/dev/null | \
                 xargs -I{} sed -i "1s/^/from typing import List\n/" {} || true
-      
+
               echo "==> Install pyvirtualcam from GitHub source"
               /app/.venv/bin/pip install --no-cache-dir \
                 git+https://github.com/letmaik/pyvirtualcam.git@v0.11.1 || echo "pyvirtualcam skipped"
-      
+
               echo "==> Install remaining dependencies"
               /app/.venv/bin/pip install --no-cache-dir -r /app/requirements-aarch64.txt
-      
+
               echo "==> Update version.txt"
               echo $TAG_NAME > /app/version.txt
-      
+
               echo "==> Build with PyInstaller"
               cd /app
               mkdir -p dist/aarch64
               /app/.venv/bin/pyinstaller --clean --distpath dist/aarch64 video-conference-using-fisheye.spec
+
+              echo "==> Copy install/uninstall scripts"
+              appdir=$(find dist/aarch64 -maxdepth 1 -type d -not -path "dist/aarch64" | head -n1)
+              cp dist/install.sh "$appdir"/
+              cp dist/uninstall.sh "$appdir"/
+              chmod +x "$appdir"/install.sh "$appdir"/uninstall.sh
+
+              echo "==> Compress to .7z"
+              cd dist/aarch64
+              appdir=$(find . -maxdepth 1 -type d -not -path "." | head -n1)
+              7z a -t7z -m0=lzma2 -mx=9 -ms=on \
+                ../FisheyeVideoConferenceSystem-${TAG_NAME}-aarch64.7z "$appdir"
+              echo "Archive created:"
+              ls -lh ../FisheyeVideoConferenceSystem-${TAG_NAME}-aarch64.7z
+              7z t ../FisheyeVideoConferenceSystem-${TAG_NAME}-aarch64.7z
             '
-            
-      - name: Get previous tag (robust)
-        id: previoustag
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
-            prev=$(git describe --tags --abbrev=0 HEAD^)
-          else
-            prev=""
-          fi
-          echo "tag=$prev" >> "$GITHUB_OUTPUT"
-        working-directory: video-conference-using-fisheye
-
-      - name: Generate changelog
-        id: changelog
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -n "${{ steps.previoustag.outputs.tag }}" ]; then
-            log_output=$(git log ${{ steps.previoustag.outputs.tag }}..HEAD --pretty=format:"- %s (%h)")
-          else
-            log_output=$(git log --pretty=format:"- %s (%h)")
-          fi
-          log_output=$(echo "$log_output" | tr '\n' ' ')
-          log_output=$(echo "$log_output" | xargs)
-          echo "log=$log_output" >> "$GITHUB_OUTPUT"
-        working-directory: video-conference-using-fisheye
-
-      - name: Upload aarch64 Artifact to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-aarch64.7z
-          tag_name: ${{ env.TAG_NAME }}
-          body: |
-            Fisheye Video Conference System ${{ env.TAG_NAME }} (aarch64)
-            ${{ steps.changelog.outputs.log }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
