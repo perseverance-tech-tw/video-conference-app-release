@@ -1,0 +1,19 @@
+FROM python:3.8-bullseye
+
+RUN apt-get update && apt-get install -y \
+    patchelf \
+    libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
+    libx11-6 libxcb1 libxkbcommon0 p7zip-full binutils \
+    build-essential cmake git \
+    pkg-config libhdf5-dev \
+    v4l2loopback-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --upgrade pip setuptools wheel
+
+RUN pip install --no-cache-dir PySide6==6.6.3.1 shiboken6==6.6.3.1
+
+RUN python -c "import PySide6; print('PySide6 OK:', PySide6.__version__)"
