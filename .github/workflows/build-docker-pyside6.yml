@@ -32,6 +32,6 @@ jobs:
           file: Dockerfile.pyside6-aarch64
           platforms: linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pyside6-aarch64:python3.8-bullseye
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pyside6-aarch64:python3.9-buster
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/pyside6-aarch64:cache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/pyside6-aarch64:cache,mode=max
