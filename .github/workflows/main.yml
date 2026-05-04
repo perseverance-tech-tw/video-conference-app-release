@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release version to publish, for example v2.1.12"
+        description: "Release version to publish, for example 2.1.0"
         required: true
         type: string
       source_ref:
-        description: "Git ref from the private app repository to build, for example releasev2 or v2.1.12"
+        description: "Git ref from the private app repository to build, for example releasev2 or 2.1.0"
         required: true
         default: "releasev2"
         type: string
@@ -31,7 +31,6 @@ jobs:
     outputs:
       tag_name: ${{ steps.inputs.outputs.tag_name }}
       source_ref: ${{ steps.inputs.outputs.source_ref }}
-      changelog: ${{ steps.changelog.outputs.log }}
 
     steps:
       - name: Validate inputs
@@ -39,10 +38,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag="${{ github.event.inputs.release_tag }}"
+          raw_tag="${{ github.event.inputs.release_tag }}"
           source_ref="${{ github.event.inputs.source_ref }}"
-          if ! [[ "$tag" =~ ^v[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Invalid release_tag: $tag"
+          tag="${raw_tag#v}"
+          if ! [[ "$tag" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Invalid release_tag: $raw_tag"
+            echo "Use a version like 2.1.0"
             exit 1
           fi
           if [ -z "$source_ref" ]; then
@@ -116,7 +117,7 @@ jobs:
           set -euo pipefail
           cd "$APP_DIR"
           git fetch --tags --depth 1 origin || true
-          prev=$(git tag --sort=-version:refname | grep '^v' | grep -v "^${TAG_NAME}$" | head -n 1 || true)
+          prev=$(git tag --sort=-version:refname | grep -E '^v?[0-9]+' | grep -v "^${TAG_NAME}$" | grep -v "^v${TAG_NAME}$" | head -n 1 || true)
           if [ -n "$prev" ] && git rev-parse "$prev" >/dev/null 2>&1; then
             body=$(git log "$prev..HEAD" --pretty=format:"- %s (%h)")
           else
