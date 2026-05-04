@@ -2,225 +2,254 @@ name: Fisheye Video Conference System
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release version to publish, for example v2.1.12"
+        required: true
+        type: string
+      source_ref:
+        description: "Git ref from the private app repository to build, for example releasev2 or v2.1.12"
+        required: true
+        default: "releasev2"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.release_tag }}
+  cancel-in-progress: false
+
+env:
+  APP_REPOSITORY: perseverance-tech-tw/video-conference-using-fisheye
+  APP_DIR: video-conference-using-fisheye
 
 jobs:
   build-windows:
     runs-on: windows-latest
 
     outputs:
-      tag_name: ${{ steps.generate_tag.outputs.tag_name }}
+      tag_name: ${{ steps.inputs.outputs.tag_name }}
+      source_ref: ${{ steps.inputs.outputs.source_ref }}
+      changelog: ${{ steps.changelog.outputs.log }}
 
     steps:
-      - name: Checkout repository (full history + tags)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          
-      - name: Checkout Private Repository
-        shell: pwsh
-        run: |
-          git clone --single-branch --depth 1 --branch releasev2 https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
-          cd video-conference-using-fisheye
-          git fetch origin releasev2 --depth 1
-          git reset --hard origin/releasev2
-          Write-Host "Listing contents of the cloned repository:"
-          Get-ChildItem -Force -Recurse
-          
-      - name: Set up Python 3.9.13
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9.13'
-
-      - name: Generate Tag Name from latest Git tag
-        id: generate_tag
+      - name: Validate inputs
+        id: inputs
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --tags --prune
-          latest_tag=$(git tag --sort=-v:refname | grep '^v2\.1\.' | head -n 1 || true)
-          if [ -z "$latest_tag" ]; then
-            next_tag="v2.1.0"
-          else
-            patch=${latest_tag##v2.1.}
-            next_patch=$((patch + 1))
-            next_tag="v2.1.$next_patch"
+          tag="${{ github.event.inputs.release_tag }}"
+          source_ref="${{ github.event.inputs.source_ref }}"
+          if ! [[ "$tag" =~ ^v[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Invalid release_tag: $tag"
+            exit 1
           fi
-          echo "TAG_NAME=$next_tag" >> "$GITHUB_ENV"
-          echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
-        
+          if [ -z "$source_ref" ]; then
+            echo "source_ref is required"
+            exit 1
+          fi
+          echo "TAG_NAME=$tag" >> "$GITHUB_ENV"
+          echo "SOURCE_REF=$source_ref" >> "$GITHUB_ENV"
+          echo "tag_name=$tag" >> "$GITHUB_OUTPUT"
+          echo "source_ref=$source_ref" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout orchestrator repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout private app repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "$SOURCE_REF" \
+            "https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/${APP_REPOSITORY}.git" \
+            "$APP_DIR"
+          cd "$APP_DIR"
+          echo "APP_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "Building ${APP_REPOSITORY}@$(git rev-parse --short HEAD)"
+
+      - name: Set up Python 3.9.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9.13"
+
       - name: Update version.txt
         shell: bash
-        run: echo "${{ env.TAG_NAME }}" > version.txt
-        working-directory: video-conference-using-fisheye
+        run: echo "${TAG_NAME}" > version.txt
+        working-directory: ${{ env.APP_DIR }}
 
       - name: Replace version placeholder in ISS file
         shell: bash
         run: |
-          if [ ! -f "dist/setup_script.iss" ]; then
-            echo "setup_script.iss not found in dist/"
-            exit 1
-          fi
-          sed -i "s/__VERSION__/${{ env.TAG_NAME }}/g" dist/setup_script.iss
-        working-directory: video-conference-using-fisheye
+          set -euo pipefail
+          test -f dist/setup_script.iss
+          sed -i "s/__VERSION__/${TAG_NAME}/g" dist/setup_script.iss
+        working-directory: ${{ env.APP_DIR }}
 
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install --no-cache-dir -r requirements.txt
-        working-directory: video-conference-using-fisheye
+        working-directory: ${{ env.APP_DIR }}
 
       - name: Build with PyInstaller
         shell: bash
         run: pyinstaller --clean video-conference-using-fisheye.spec
-        working-directory: video-conference-using-fisheye
+        working-directory: ${{ env.APP_DIR }}
 
       - name: Install Inno Setup
         shell: powershell
         run: choco install innosetup -y
-        working-directory: video-conference-using-fisheye
-        
-      - name: Build Installer
-        shell: cmd
-        run: 
-          iscc dist\setup_script.iss
-        working-directory: video-conference-using-fisheye
 
-      - name: Get previous tag (robust)
-        id: previoustag
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
-            prev=$(git describe --tags --abbrev=0 HEAD^)
-          else
-            prev=""
-          fi
-          echo "tag=$prev" >> "$GITHUB_OUTPUT"
-        working-directory: video-conference-using-fisheye
-          
-      - name: Generate changelog (robust)
+      - name: Build installer
+        shell: cmd
+        run: iscc dist\setup_script.iss
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Generate changelog
         id: changelog
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "${{ steps.previoustag.outputs.tag }}" ]; then
-            log_output=$(git log ${{ steps.previoustag.outputs.tag }}..HEAD --pretty=format:"- %s (%h)")
+          cd "$APP_DIR"
+          git fetch --tags --depth 1 origin || true
+          prev=$(git tag --sort=-version:refname | grep '^v' | grep -v "^${TAG_NAME}$" | head -n 1 || true)
+          if [ -n "$prev" ] && git rev-parse "$prev" >/dev/null 2>&1; then
+            body=$(git log "$prev..HEAD" --pretty=format:"- %s (%h)")
           else
-            log_output=$(git log --pretty=format:"- %s (%h)")
+            body=$(git log --pretty=format:"- %s (%h)")
           fi
-          log_output=$(echo "$log_output" | tr '\n' ' ')
-          log_output=$(echo "$log_output" | xargs)
-          echo "log=$log_output" >> "$GITHUB_OUTPUT"
-        working-directory: video-conference-using-fisheye
-        
-      - name: Upload Windows Artifact to GitHub Release
+          {
+            echo 'log<<EOF'
+            echo "$body"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate Windows checksum
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path "$env:APP_DIR\dist\Output" -Filter "*Fisheye*$env:TAG_NAME*.exe"
+          if (-not $files) { throw "Installer not found" }
+          $lines = foreach ($file in $files) {
+            $hash = Get-FileHash -Algorithm SHA256 -Path $file.FullName
+            "$($hash.Hash.ToLower())  $($file.Name)"
+          }
+          $lines | Set-Content -Path "$env:APP_DIR\dist\Output\SHA256SUMS-windows.txt" -Encoding ascii
+
+      - name: Upload Windows artifact to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            video-conference-using-fisheye/dist/Output/*Fisheye*${{ env.TAG_NAME }}*.exe
+            ${{ env.APP_DIR }}/dist/Output/*Fisheye*${{ env.TAG_NAME }}*.exe
+            ${{ env.APP_DIR }}/dist/Output/SHA256SUMS-windows.txt
           tag_name: ${{ env.TAG_NAME }}
           body: |
             Fisheye Video Conference System ${{ env.TAG_NAME }}
+
+            Source: `${{ env.APP_REPOSITORY }}@${{ env.APP_COMMIT }}`
+
             ${{ steps.changelog.outputs.log }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
+
   build-linux:
     runs-on: ubuntu-latest
     needs: build-windows
 
     steps:
-      - name: Checkout repository (full history + tags)
+      - name: Set release environment
+        shell: bash
+        run: |
+          echo "TAG_NAME=${{ needs.build-windows.outputs.tag_name }}" >> "$GITHUB_ENV"
+          echo "SOURCE_REF=${{ needs.build-windows.outputs.source_ref }}" >> "$GITHUB_ENV"
+
+      - name: Checkout orchestrator repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          fetch-depth: 1
 
-      - name: Checkout Private Repository
-        run: |
-          git clone --branch releasev2 https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/perseverance-tech-tw/video-conference-using-fisheye.git video-conference-using-fisheye
-          cd video-conference-using-fisheye
-          echo "Listing contents of the cloned repository:"
-          ls -l
-
-      - name: Set TAG_NAME from Windows job
+      - name: Checkout private app repository
         shell: bash
-        run: echo "TAG_NAME=${{ needs.build-windows.outputs.tag_name }}" >> "$GITHUB_ENV"
-        working-directory: video-conference-using-fisheye
-        
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "$SOURCE_REF" \
+            "https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/${APP_REPOSITORY}.git" \
+            "$APP_DIR"
+          cd "$APP_DIR"
+          echo "APP_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "Building ${APP_REPOSITORY}@$(git rev-parse --short HEAD)"
+
       - name: Set up Python 3.9.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9.13'
-        
+          python-version: "3.9.13"
+
       - name: Update version.txt
         shell: bash
-        run: echo "${{ env.TAG_NAME }}" > version.txt
-        working-directory: video-conference-using-fisheye
-        
+        run: echo "${TAG_NAME}" > version.txt
+        working-directory: ${{ env.APP_DIR }}
+
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install --no-cache-dir -r requirements-linux.txt
-        working-directory: video-conference-using-fisheye
-        
+        working-directory: ${{ env.APP_DIR }}
+
       - name: Create dist/linux folder
         shell: bash
         run: mkdir -p dist/linux
-        working-directory: video-conference-using-fisheye
-        
+        working-directory: ${{ env.APP_DIR }}
+
       - name: Build with PyInstaller (Linux)
         shell: bash
         run: pyinstaller --clean --distpath dist/linux video-conference-using-fisheye.spec
-        working-directory: video-conference-using-fisheye
-        
-      - name: Copy install.sh and uninstall.sh into dist/linux folder
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Copy install scripts into Linux app folder
         shell: bash
         run: |
           set -euo pipefail
           appdir="dist/linux/FisheyeVideoConferenceSystem"
           if [ ! -d "$appdir" ]; then
-            appdir=$(find dist/linux -maxdepth 1 -type d -not -path 'dist/linux' | head -n1 || true)
+            appdir=$(find dist/linux -maxdepth 1 -type d -not -path 'dist/linux' | head -n 1 || true)
           fi
           if [ -z "${appdir:-}" ] || [ ! -d "$appdir" ]; then
-            echo "ERROR: Could not find app output folder under dist/linux"
+            echo "Could not find app output folder under dist/linux"
             ls -la dist/linux || true
             exit 1
           fi
-          echo "App directory detected: $appdir"
           cp dist/install.sh "$appdir"/
           cp dist/uninstall.sh "$appdir"/
           chmod +x "$appdir"/install.sh "$appdir"/uninstall.sh
-        working-directory: video-conference-using-fisheye
-        
+        working-directory: ${{ env.APP_DIR }}
+
       - name: Install p7zip
         shell: bash
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
-        working-directory: video-conference-using-fisheye
-        
-      - name: Compress to .7z (LZMA2) and self-test
+
+      - name: Compress Linux artifact and self-test
         shell: bash
         run: |
           set -euo pipefail
           cd dist/linux
-          appdir=$(find . -maxdepth 1 -type d -not -path '.' | head -n1)
-          echo "Zipping folder: $appdir"
+          appdir=$(find . -maxdepth 1 -type d -not -path '.' | head -n 1)
           out="../FisheyeVideoConferenceSystem-${TAG_NAME}-linux.7z"
           7z a -t7z -m0=lzma2 -mx=9 -ms=on "$out" "$appdir"
-          echo "Archive created:"
-          ls -lh "$out"
-          echo "Testing archive integrity…"
           7z t "$out"
-        working-directory: video-conference-using-fisheye
-        
-      - name: Upload Linux Artifact to GitHub Release
+          cd ..
+          sha256sum "FisheyeVideoConferenceSystem-${TAG_NAME}-linux.7z" > SHA256SUMS-linux.txt
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Upload Linux artifact to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            video-conference-using-fisheye/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z
+            ${{ env.APP_DIR }}/dist/FisheyeVideoConferenceSystem-${{ env.TAG_NAME }}-linux.7z
+            ${{ env.APP_DIR }}/dist/SHA256SUMS-linux.txt
           tag_name: ${{ env.TAG_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
