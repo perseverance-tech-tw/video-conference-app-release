@@ -24,7 +24,7 @@ on:
       source_ref:
         description: "Branch, tag or full SHA of the app repository to build"
         required: true
-        default: main
+        default: moilmeet-c++
       targets:
         description: "Which installers to build"
         type: choice
@@ -98,6 +98,22 @@ jobs:
               exit 1
             fi
           fi
+
+          # A ref that exists but holds a different project (main/release are still the Python
+          # app) would otherwise pass here and fail minutes later in Configure. Trees only, no
+          # blobs: this costs a few KB, not a checkout.
+          probe=$(mktemp -d)
+          git -C "$probe" init -q
+          git -C "$probe" fetch -q --depth 1 --filter=blob:none \
+            "https://x-access-token:${APP_TOKEN}@github.com/${APP_REPOSITORY}.git" "$commit"
+          if ! git -C "$probe" cat-file -e "$commit:CMakeLists.txt" 2>/dev/null; then
+            echo "source_ref '$SOURCE_REF' ($commit) has no CMakeLists.txt at its root."
+            echo "Top level of that commit:"
+            git -C "$probe" ls-tree --name-only "$commit" | sed 's/^/  /'
+            echo "The C++ app lives on branch moilmeet-c++; main/release are the old Python app."
+            exit 1
+          fi
+          rm -rf "$probe"
 
           {
             echo "version=$ver"
