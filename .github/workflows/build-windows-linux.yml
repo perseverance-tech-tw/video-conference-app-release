@@ -465,6 +465,25 @@ jobs:
             fi
             printf '%-8s %s\n' "$t" "$(printf '%s\n' "$out" | head -n1)"
           done
+          for t in ffmpeg ffprobe ffplay; do
+            p=$(command -v "$t" 2>/dev/null || true)
+            if [ -z "$p" ]; then
+              echo "!! $t is not on PATH"
+              fail=1; continue
+            fi
+            unresolved=$(ldd "$p" 2>/dev/null | grep 'not found' | grep -v 'api-ms-win-' || true)
+            if [ -n "$unresolved" ]; then
+              echo "!! $t ($p) has unresolved DLLs:"
+              echo "$unresolved"
+              fail=1; continue
+            fi
+            if ! out=$(timeout 60 "$t" -hide_banner -version </dev/null 2>&1); then
+              echo "!! $t ($p) will not run (or hung for 60 s):"
+              echo "$out"
+              fail=1; continue
+            fi
+            printf '%-8s %s\n' "$t" "$(printf '%s\n' "$out" | head -n1)"
+          done
           [ "$fail" -eq 0 ] || {
             echo
             echo "!! The MSYS2 toolchain does not execute. This is what a bare 'exit 127' in"
@@ -552,7 +571,7 @@ jobs:
 
       - name: Test
         working-directory: ${{ env.APP_DIR }}
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir build --output-on-failure --timeout 300
 
       - name: Stage the application
         # Everything the installer ships, laid out exactly as the app expects at runtime:
